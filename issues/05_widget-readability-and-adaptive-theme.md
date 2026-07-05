@@ -1,8 +1,8 @@
 ## ウィジェットの可読性改善と適応型デフォルトテーマ
 id: 05
 branch-slug: widget-readability-and-adaptive-theme
-github_issue:
-status: open
+github_issue: 9
+status: close
 type: feat
 対象: |
   packages/widget/src/styles.ts
