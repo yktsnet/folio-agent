@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+
+      - name: Verify tag matches package versions
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          handler_version=$(node -p "require('./packages/handler/package.json').version")
+          widget_version=$(node -p "require('./packages/widget/package.json').version")
+          if [ "$tag_version" != "$handler_version" ] || [ "$tag_version" != "$widget_version" ]; then
+            echo "::error::tag v$tag_version does not match package versions (handler=$handler_version, widget=$widget_version)"
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - name: Publish (Trusted Publishing / OIDC, npm >= 11.5.1 required)
+        run: npm publish --provenance -w @folio-agent/handler -w @folio-agent/widget
