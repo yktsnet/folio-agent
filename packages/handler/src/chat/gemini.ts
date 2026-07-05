@@ -18,14 +18,27 @@ const ROUTE_INSTRUCTIONS: Record<Exclude<ChatRoute, "rate_limited">, string> = {
   inquiry: "訪問者は仕事の依頼・相談をしようとしています。簡潔に応じたうえで、Contactページへの問い合わせを案内してください。",
 };
 
-export function buildSystemPrompt(knowledge: string, route: Exclude<ChatRoute, "rate_limited">): string {
-  return [COMMON_PREAMBLE, ROUTE_INSTRUCTIONS[route], "---- 知識 ----", knowledge].join("\n\n");
+function buildInquiryInstruction(contactUrl?: string): string {
+  if (contactUrl) {
+    return `訪問者は仕事の依頼・相談をしようとしています。簡潔に応じたうえで、Contactページ（${contactUrl}）への問い合わせを案内してください。`;
+  }
+  return ROUTE_INSTRUCTIONS.inquiry;
+}
+
+export function buildSystemPrompt(
+  knowledge: string,
+  route: Exclude<ChatRoute, "rate_limited">,
+  contactUrl?: string,
+): string {
+  const routeInstruction = route === "inquiry" ? buildInquiryInstruction(contactUrl) : ROUTE_INSTRUCTIONS[route];
+  return [COMMON_PREAMBLE, routeInstruction, "---- 知識 ----", knowledge].join("\n\n");
 }
 
 export interface GeminiGeneratorConfig {
   apiKey: string;
   knowledge: string;
   model?: string;
+  contactUrl?: string;
 }
 
 export type GenerateAnswerFn = (input: string, route: ChatRoute) => Promise<string>;
@@ -42,7 +55,7 @@ export function createGeminiGenerator(config: GeminiGeneratorConfig): GenerateAn
     const response = await client.models.generateContent({
       model,
       contents: input,
-      config: { systemInstruction: buildSystemPrompt(config.knowledge, route) },
+      config: { systemInstruction: buildSystemPrompt(config.knowledge, route, config.contactUrl) },
     });
 
     return response.text ?? "";

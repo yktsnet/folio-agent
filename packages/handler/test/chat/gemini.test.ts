@@ -35,4 +35,23 @@ describe("buildSystemPrompt", () => {
     expect(thoughts).not.toContain("Zenn");
     expect(works).not.toBe(inquiry);
   });
+
+  it("embeds contactUrl into the inquiry instruction when provided", () => {
+    const inquiry = buildSystemPrompt("knowledge body", "inquiry", "https://example.com/contact");
+    expect(inquiry).toContain("https://example.com/contact");
+  });
+
+  it("keeps the existing inquiry wording when contactUrl is not provided", () => {
+    const inquiry = buildSystemPrompt("knowledge body", "inquiry");
+    expect(inquiry).toContain("Contactページへの問い合わせを案内してください。");
+  });
+
+  it("ignores contactUrl for thoughts and works routes", () => {
+    const contactUrl = "https://example.com/contact";
+    const thoughts = buildSystemPrompt("knowledge body", "thoughts", contactUrl);
+    const works = buildSystemPrompt("knowledge body", "works", contactUrl);
+
+    expect(thoughts).not.toContain(contactUrl);
+    expect(works).not.toContain(contactUrl);
+  });
 });
