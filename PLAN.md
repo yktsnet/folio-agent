@@ -59,14 +59,16 @@
 利用者のサイト（静的ビルド）
   └── ビルド時: folio-agent CLI が dist/ + knowledge/ + (Zenn) → 知識ファイル生成
 ブラウザ
-  └── ウィジェット → POST /chat → Cloudflare Worker
+  └── ウィジェット → POST /api/chat → サイトと同一デプロイの Function（Pages Functions）
         LangGraph.js StateGraph:
           input_guard → route(考え方 / Works / 依頼) → generate → log
+        ├── 知識: ビルド時に同梱（配送案D。詳細は JUDGE §9）
         ├── LLM: Gemini（無料枠）
         └── D1: 入力履歴ログ + レート制限カウンタ
 ```
 
-- モノレポで npm パッケージ2つ: **ウィジェット**（フロント）と **Worker ハンドラ + 取り込み CLI**。
+- モノレポで npm パッケージ2つ: **ウィジェット**（フロント）と **チャットハンドラ + 取り込み CLI**。
+- 知識の配送は v1 では**サイトと同一デプロイに同梱**（案D）。生成段階と配送段階を分離した設計にし、Cloudflare 外のサイト向けの配送（案C: 知識を静的アセット公開 + 独立 Worker が fetch）は将来追加できる構造と境界を README に明記する。
 - ログテーブルをそのままレート制限のカウンタに流用する（別の仕組みを持たない）。
 
 ## 6. 設計上の境界（Out-of-Scope）
@@ -81,7 +83,7 @@
 ### Phase 0: 足場
 
 - [x] リポ組成（PLAN / JUDGE / LICENSE / issues）
-- [ ] モノレポ構成（packages/widget, packages/worker）+ TypeScript + Vitest
+- [ ] モノレポ構成（packages/widget, packages/handler）+ TypeScript + Vitest
 - [ ] repo-standardize 再実行（CLAUDE.md・context/・settings.json はコード確定後）
 
 ### Phase 1: 知識取り込み CLI
@@ -90,7 +92,7 @@
 - [ ] knowledge/ ディレクトリ結合、Zenn 取り込み（オプション）
 - [ ] 知識ファイル生成（トークン量の計測・上限警告つき）
 
-### Phase 2: Worker（バックエンド）
+### Phase 2: チャットハンドラ（バックエンド）
 
 - [ ] LangGraph.js StateGraph（input_guard → route → generate → log）
 - [ ] D1 スキーマ（ログ）+ レート制限（10分/1日、環境変数）
