@@ -1,0 +1,15 @@
+{
+  "name": "folio-agent-dev",
+  "main": "worker.ts",
+  "compatibility_date": "2026-07-01",
+  "assets": {
+    "directory": "./public"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "folio-agent",
+      "database_id": "54da97c3-179e-4b8b-98cf-c364d2188e2c"
+    }
+  ]
+}

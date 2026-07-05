@@ -83,25 +83,25 @@
 ### Phase 0: 足場
 
 - [x] リポ組成（PLAN / JUDGE / LICENSE / issues）
-- [ ] モノレポ構成（packages/widget, packages/handler）+ TypeScript + Vitest
+- [x] モノレポ構成（packages/widget, packages/handler）+ TypeScript + Vitest
 - [ ] repo-standardize 再実行（CLAUDE.md・context/・settings.json はコード確定後）
 
 ### Phase 1: 知識取り込み CLI
 
-- [ ] dist/ 走査 + URL グロブ選択 + HTML → テキスト抽出
-- [ ] knowledge/ ディレクトリ結合、Zenn 取り込み（オプション）
-- [ ] 知識ファイル生成（トークン量の計測・上限警告つき）
+- [x] dist/ 走査 + URL グロブ選択 + HTML → テキスト抽出
+- [x] knowledge/ ディレクトリ結合（Zenn 取り込みは未実装・オプションのため後回し）
+- [x] 知識ファイル生成（トークン量の計測・上限警告つき）
 
 ### Phase 2: チャットハンドラ（バックエンド）
 
-- [ ] LangGraph.js StateGraph（input_guard → route → generate → log）
-- [ ] D1 スキーマ（ログ）+ レート制限（10分/1日、環境変数）
-- [ ] Gemini 呼び出し + 無回答ポリシー + Contact 誘導
+- [x] LangGraph.js StateGraph（input_guard → route → generate → log）
+- [x] D1 スキーマ（ログ）+ レート制限（10分/1日、環境変数で調整可）
+- [x] Gemini 呼び出し + 無回答ポリシー + Contact 誘導
 
 ### Phase 3: ウィジェット（フロント）
 
-- [ ] 右下常駐・クリックで展開する軽量コンポーネント
-- [ ] 初回開示文 + ポリシーページリンク + 超過時メッセージ
+- [x] 右下常駐・クリックで展開する軽量コンポーネント（Shadow DOM、フレームワーク非依存のCustom Element）
+- [x] 初回開示文 + ポリシーページリンク + 超過時メッセージ（超過時メッセージはhandler側が返す文言をそのまま表示する形で実現）
 
 ### Phase 4: Dogfooding + 公開
 

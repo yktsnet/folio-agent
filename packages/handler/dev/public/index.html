@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>folio-agent dev harness (same-origin, matches v1 deployment shape)</title>
+  </head>
+  <body>
+    <h1>ホストサイトのつもり（同一デプロイ）</h1>
+    <p>右下にウィジェットが常駐します。クリックするまで無音であることを確認してください。</p>
+
+    <folio-agent-widget endpoint="/api/chat" policy-href="/data-policy"></folio-agent-widget>
+
+    <script type="module">
+      import { defineFolioAgentWidget } from "/widget/index.js";
+      defineFolioAgentWidget();
+    </script>
+  </body>
+</html>

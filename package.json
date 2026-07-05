@@ -1,0 +1,21 @@
+{
+  "name": "folio-agent",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Portfolio reception chatbot (CAG) — monorepo root",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}

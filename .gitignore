@@ -6,6 +6,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.dev.vars
 
 # Claude Code
 .claude/settings.local.json
@@ -15,3 +16,4 @@ node_modules/
 dist/
 .wrangler/
 *.tsbuildinfo
+packages/handler/dev/public/widget/

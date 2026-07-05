@@ -1,0 +1,7 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/widget" },
+    { "path": "packages/handler" }
+  ]
+}

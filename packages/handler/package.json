@@ -1,0 +1,27 @@
+{
+  "name": "@folio-agent/handler",
+  "version": "0.0.0",
+  "description": "Chat handler (LangGraph.js on Cloudflare Workers) + knowledge ingestion CLI",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "bin": {
+    "folio-agent-ingest": "./dist/ingest/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@google/genai": "^2.10.0",
+    "@langchain/langgraph": "^1.4.7",
+    "node-html-parser": "^8.0.4",
+    "picomatch": "^4.0.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260705.1",
+    "@types/picomatch": "^4.0.2",
+    "wrangler": "^4.107.0"
+  }
+}
