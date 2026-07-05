@@ -1,8 +1,8 @@
 ## Zenn記事のローカル取り込み
 id: 02
 branch-slug: zenn-ingest
-github_issue:
-status: open
+github_issue: 4
+status: close
 type: feat
 対象: packages/handler/src/ingest/types.ts / packages/handler/src/ingest/zenn.ts (新規) / packages/handler/src/ingest/generate.ts / packages/handler/src/index.ts / packages/handler/test/ingest/zenn.test.ts (新規) / packages/handler/test/ingest/generate.test.ts
 内容: PLAN.md §4-3で「オプション」として未実装のまま残っていたZenn記事取り込みを実装する。ネットワーク経由でzenn.devから取得するのではなく、Zenn CLIのarticles/ディレクトリ（ローカルパス）を`dist/`・`knowledge/`と同じ要領で読み込む。
