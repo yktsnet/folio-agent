@@ -34,8 +34,7 @@ folio-agent/
 │       │   ├── index.ts           # defineFolioAgentWidget エクスポート
 │       │   └── types.ts
 │       └── test/
-├── PLAN.md                   # 構想メモ（README の前身）
-├── JUDGE.md                  # 技術選定と判断
+├── README.md                 # 利用ドキュメント + 設計判断（Design Decisions）
 └── issues/                   # ローカル Issue 管理
 ```
 
@@ -72,4 +71,4 @@ input_guard（rate-limit: 10分3問・日次10問 = chat_logs の COUNT）
 
 ## 検証ハーネス（packages/handler/dev/）
 
-`wrangler dev --port 8799` + ローカル D1。`public/` に widget のビルド成果物を都度コピーして、v1 の同一デプロイ構成（JUDGE §9）を再現する。手順は `dev/README.md`。
+`wrangler dev --port 8799` + ローカル D1。`public/` に widget のビルド成果物を都度コピーして、v1 の同一デプロイ構成（README の Design Decisions）を再現する。手順は `dev/README.md`。
