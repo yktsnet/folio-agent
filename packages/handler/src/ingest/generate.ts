@@ -3,6 +3,7 @@ import { htmlToText } from "./html-to-text.js";
 import { readTextFile, scanDist, scanKnowledgeDir } from "./scan-dist.js";
 import { DEFAULT_TOKEN_WARNING_THRESHOLD, estimateTokens } from "./token-count.js";
 import type { IngestConfig, KnowledgeDocument, KnowledgePage } from "./types.js";
+import { scanZennArticles } from "./zenn.js";
 
 export async function generateKnowledge(config: IngestConfig): Promise<KnowledgeDocument> {
   const matchesUrl = createUrlMatcher(config);
@@ -21,6 +22,10 @@ export async function generateKnowledge(config: IngestConfig): Promise<Knowledge
       const text = (await readTextFile(file.absolutePath)).trim();
       pages.push({ url: file.urlPath, source: "knowledge", title: file.urlPath, text });
     }
+  }
+
+  if (config.zenn) {
+    pages.push(...(await scanZennArticles(config.zenn)));
   }
 
   pages.sort((a, b) => a.url.localeCompare(b.url));
