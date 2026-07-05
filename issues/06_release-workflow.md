@@ -1,8 +1,8 @@
 ## タグ連動の npm publish ワークフロー（Trusted Publishing）
 id: 06
 branch-slug: release-workflow
-github_issue:
-status: open
+github_issue: 14
+status: close
 type: feat
 対象: |
   .github/workflows/release.yml (新規)
