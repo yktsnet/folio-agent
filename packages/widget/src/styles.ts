@@ -1,7 +1,11 @@
+// テーマ注入: 利用側サイトのグローバルCSSで
+//   folio-agent-widget { --folio-agent-accent: #...; }
+// のようにカスタムプロパティを指定するとShadow DOM内に継承されテーマが反映される。
+// 未指定の場合は各プロパティのフォールバック値（現行デザイン）がそのまま使われる。
 export const WIDGET_STYLES = `
   :host {
     all: initial;
-    font-family: system-ui, sans-serif;
+    font-family: var(--folio-agent-font, system-ui, sans-serif);
   }
   .toggle {
     position: fixed;
@@ -11,8 +15,8 @@ export const WIDGET_STYLES = `
     height: 56px;
     border-radius: 50%;
     border: none;
-    background: #1f2937;
-    color: #fff;
+    background: var(--folio-agent-accent, #1f2937);
+    color: var(--folio-agent-accent-contrast, #fff);
     font-size: 24px;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
@@ -26,7 +30,7 @@ export const WIDGET_STYLES = `
     max-height: 420px;
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: var(--folio-agent-surface, #fff);
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     overflow: hidden;
@@ -44,24 +48,24 @@ export const WIDGET_STYLES = `
     gap: 8px;
     font-size: 14px;
     line-height: 1.5;
-    color: #111827;
+    color: var(--folio-agent-text, #111827);
   }
   .message.assistant {
     align-self: flex-start;
-    background: #f3f4f6;
+    background: var(--folio-agent-muted, #f3f4f6);
     border-radius: 8px;
     padding: 6px 10px;
   }
   .message.user {
     align-self: flex-end;
-    background: #1f2937;
-    color: #fff;
+    background: var(--folio-agent-accent, #1f2937);
+    color: var(--folio-agent-accent-contrast, #fff);
     border-radius: 8px;
     padding: 6px 10px;
   }
   .disclosure {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--folio-agent-muted, #6b7280);
     padding: 0 0 4px;
   }
   .disclosure a {
@@ -85,7 +89,7 @@ export const WIDGET_STYLES = `
     background: none;
     padding: 0 14px;
     cursor: pointer;
-    color: #1f2937;
+    color: var(--folio-agent-accent, #1f2937);
     font-weight: 600;
   }
 `;
