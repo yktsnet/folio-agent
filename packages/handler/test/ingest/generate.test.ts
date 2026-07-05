@@ -62,4 +62,32 @@ describe("generateKnowledge", () => {
     expect(knowledge.warnings).toHaveLength(1);
     expect(knowledge.warnings[0]).toMatch(/exceeds the warning threshold/);
   });
+
+  it("includes published Zenn articles when zenn config is set", async () => {
+    await writeDistPage(root, "index.html", "Home", "<p>Welcome</p>");
+
+    const articlesDir = join(root, "articles");
+    await mkdir(articlesDir, { recursive: true });
+    await writeFile(
+      join(articlesDir, "my-post.md"),
+      ["---", 'title: "Zenn記事"', "published: true", "---", "", "Zenn本文。"].join("\n"),
+    );
+
+    const knowledge = await generateKnowledge({
+      distDir: join(root, "dist"),
+      include: ["/"],
+      zenn: {
+        articlesDir,
+        baseUrl: "https://zenn.dev/username/articles",
+      },
+    });
+
+    const zennPage = knowledge.pages.find((p) => p.source === "zenn");
+    expect(zennPage).toEqual({
+      url: "https://zenn.dev/username/articles/my-post",
+      source: "zenn",
+      title: "Zenn記事",
+      text: "Zenn本文。",
+    });
+  });
 });

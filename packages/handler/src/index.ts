@@ -1,7 +1,13 @@
 export { generateKnowledge } from "./ingest/generate.js";
 export { createUrlMatcher } from "./ingest/glob.js";
 export { htmlToText } from "./ingest/html-to-text.js";
-export type { IngestConfig, KnowledgeDocument, KnowledgePage, KnowledgeSource } from "./ingest/types.js";
+export type {
+  IngestConfig,
+  KnowledgeDocument,
+  KnowledgePage,
+  KnowledgeSource,
+  ZennIngestConfig,
+} from "./ingest/types.js";
 
 export { createChatHandler } from "./chat/handler.js";
 export type { ChatHandlerConfig } from "./chat/handler.js";
