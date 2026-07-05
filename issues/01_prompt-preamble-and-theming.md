@@ -1,8 +1,8 @@
 ## システムプロンプト共通前文の再設計とウィジェットのテーマ変数受け口
 id: 01
 branch-slug: prompt-preamble-and-theming
-github_issue:
-status: open
+github_issue: 2
+status: close
 type: feat
 対象: packages/handler/src/chat/gemini.ts / packages/handler/test/chat/gemini.test.ts (新規) / packages/widget/src/styles.ts / packages/widget/test/styles.test.ts (新規)
 内容: 実機検証で見つかった回答品質の問題（無回答原則が thoughts 経路にしか効いていない・Markdown 記法が生で表示される・口調がオフィスライク）をシステムプロンプト共通前文の再設計で解消する。あわせて、ウィジェットのハードコード配色を CSS カスタムプロパティ経由に変え、利用側サイトがテーマを注入できる受け口を作る。
