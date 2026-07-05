@@ -4,7 +4,7 @@
 
 静的サイト + Cloudflare Workers 向けに、知識全量をビルド時にシステムプロンプトへ同梱する **CAG（検索を持たないfull-context）方式**で答えるポートフォリオ受付チャットボットを提供する npm パッケージ。
 
-> npm 未公開。公開までは本リポを clone し、workspace パッケージとして利用してください。
+> npm 公開済み。`npm install @folio-agent/widget @folio-agent/handler` で導入できます。
 
 ## Quick Start
 

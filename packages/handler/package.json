@@ -1,14 +1,33 @@
 {
   "name": "@folio-agent/handler",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Chat handler (LangGraph.js on Cloudflare Workers) + knowledge ingestion CLI",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": ["dist", "migrations"],
   "bin": {
     "folio-agent-ingest": "./dist/ingest/cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yktsnet/folio-agent.git",
+    "directory": "packages/handler"
+  },
+  "homepage": "https://github.com/yktsnet/folio-agent#readme",
+  "bugs": {
+    "url": "https://github.com/yktsnet/folio-agent/issues"
+  },
+  "keywords": [
+    "chatbot",
+    "cloudflare-workers",
+    "langgraph",
+    "gemini",
+    "cag"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -b"

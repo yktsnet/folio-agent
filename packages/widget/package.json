@@ -1,12 +1,30 @@
 {
   "name": "@folio-agent/widget",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Framework-agnostic reception chat widget (silent until clicked)",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": ["dist"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yktsnet/folio-agent.git",
+    "directory": "packages/widget"
+  },
+  "homepage": "https://github.com/yktsnet/folio-agent#readme",
+  "bugs": {
+    "url": "https://github.com/yktsnet/folio-agent/issues"
+  },
+  "keywords": [
+    "chatbot",
+    "web-components",
+    "chat-widget",
+    "shadow-dom"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -b"
   },
