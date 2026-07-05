@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git push origin main*)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(ssh *)",
+      "Bash(rsync *)",
+      "Bash(wrangler deploy*)",
+      "Bash(npx wrangler deploy*)",
+      "Bash(npm publish*)"
+    ],
+    "allow": [
+      "Bash(git *)",
+      "Bash(gh pr *)",
+      "Bash(npm ci)",
+      "Bash(npm run *)",
+      "Bash(npm test*)",
+      "Bash(npx vitest *)",
+      "Bash(npx tsc *)"
+    ]
+  },
+  "attribution": { "commit": "", "pr": "" }
+}
