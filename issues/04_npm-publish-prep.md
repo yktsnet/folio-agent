@@ -2,7 +2,7 @@
 id: 04
 branch-slug: npm-publish-prep
 github_issue:
-status: open
+status: close
 type: cleanup
 対象: |
   packages/handler/package.json
