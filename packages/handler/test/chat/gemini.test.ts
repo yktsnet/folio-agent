@@ -17,6 +17,11 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("プレーンテキスト");
   });
 
+  it.each(ROUTES)("includes the paragraph-break instruction for %s", (route) => {
+    const prompt = buildSystemPrompt("knowledge body", route);
+    expect(prompt).toContain("2〜4文ごとに空行");
+  });
+
   it.each(ROUTES)("embeds the knowledge for %s", (route) => {
     const prompt = buildSystemPrompt("knowledge body", route);
     expect(prompt).toContain("knowledge body");
