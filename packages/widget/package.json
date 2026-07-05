@@ -1,6 +1,6 @@
 {
   "name": "@folio-agent/widget",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Framework-agnostic reception chat widget (silent until clicked)",
   "license": "MIT",
   "type": "module",
@@ -28,7 +28,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "prepublishOnly": "tsc -b --force"
   },
   "devDependencies": {
     "happy-dom": "^20.10.6"
