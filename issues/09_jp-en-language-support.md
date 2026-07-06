@@ -1,8 +1,8 @@
 ## handler / widget の JP・EN 言語対応
 id: 09
 branch-slug: feat/jp-en-language-support
-github_issue:
-status: open
+github_issue: 18
+status: close
 type: feat
 対象: packages/handler/src/chat/gemini.ts, packages/handler/src/chat/route.ts, packages/handler/src/chat/graph.ts, packages/handler/src/chat/handler.ts, packages/handler/src/chat/types.ts, packages/widget/src/widget-element.ts, context/conventions.md, 対応するテストファイル
 内容: handler のシステムプロンプト・ルーティングキーワード・定型メッセージ、および widget の UI 文言を `ja` / `en` で切り替えられるようにする。既定は `ja`（既存挙動と完全互換）。
