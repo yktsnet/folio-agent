@@ -90,4 +90,49 @@ describe("generateKnowledge", () => {
       text: "Zenn本文。",
     });
   });
+
+  it("falls back to zennSnapshotPath when articlesDir does not exist", async () => {
+    await writeDistPage(root, "index.html", "Home", "<p>Welcome</p>");
+
+    const zennSnapshotPath = join(root, "zenn-snapshot.json");
+    const snapshotPages = [
+      {
+        url: "https://zenn.dev/username/articles/my-post",
+        source: "zenn",
+        title: "Zenn記事",
+        text: "Zenn本文。",
+      },
+    ];
+    await writeFile(zennSnapshotPath, JSON.stringify(snapshotPages, null, 2));
+
+    const knowledge = await generateKnowledge({
+      distDir: join(root, "dist"),
+      include: ["/"],
+      zenn: {
+        articlesDir: join(root, "articles-not-checked-out"),
+        baseUrl: "https://zenn.dev/username/articles",
+      },
+      zennSnapshotPath,
+    });
+
+    const zennPage = knowledge.pages.find((p) => p.source === "zenn");
+    expect(zennPage).toEqual(snapshotPages[0]);
+  });
+
+  it("warns and skips zenn ingest when articlesDir does not exist and no snapshot is configured", async () => {
+    await writeDistPage(root, "index.html", "Home", "<p>Welcome</p>");
+
+    const articlesDir = join(root, "articles-not-checked-out");
+    const knowledge = await generateKnowledge({
+      distDir: join(root, "dist"),
+      include: ["/"],
+      zenn: {
+        articlesDir,
+        baseUrl: "https://zenn.dev/username/articles",
+      },
+    });
+
+    expect(knowledge.pages.find((p) => p.source === "zenn")).toBeUndefined();
+    expect(knowledge.warnings).toEqual([`articlesDir not found: ${articlesDir} — skipping zenn ingest`]);
+  });
 });

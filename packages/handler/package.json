@@ -12,7 +12,8 @@
   ],
   "bin": {
     "folio-agent-ingest": "dist/ingest/cli.js",
-    "folio-agent-init": "dist/init/cli.js"
+    "folio-agent-init": "dist/init/cli.js",
+    "folio-agent-sync-zenn": "dist/sync/cli.js"
   },
   "repository": {
     "type": "git",
