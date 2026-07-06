@@ -41,7 +41,7 @@ Gemini API キーは `packages/handler/dev/.dev.vars`（gitignore 済・`.dev.va
 - 知識は**ビルド時に全量生成**（full-context/CAG。検索なし）: `folio-agent-ingest` が利用者サイトの `dist/` + `knowledge/` から knowledge.json を作る。
 - 実行時は LangGraph StateGraph 1本: `input_guard →（レート制限内なら）route → generate → log`。外部依存（D1 / Gemini）はすべて factory への注入で受ける。
 - D1 の `chat_logs` がログとレート制限カウンタを兼ねる（テーブルは1つだけ）。
-- 設計判断は `README.md` の Design Decisions が正。実装がこれと食い違う場合は指摘する。
+- 設計判断は `docs/design-decisions.md` が正（README の Design Decisions はそのダイジェスト）。実装がこれと食い違う場合は指摘する。
 
 ## 検証手段
 

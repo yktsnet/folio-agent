@@ -38,7 +38,9 @@ folio-agent/
 │       │   ├── index.ts           # defineFolioAgentWidget エクスポート
 │       │   └── types.ts
 │       └── test/
-├── README.md                 # 利用ドキュメント + 設計判断（Design Decisions）
+├── README.md                 # 利用ドキュメント + 設計判断ダイジェスト
+├── docs/
+│   └── design-decisions.md   # 設計判断の全文（正はこちら）
 └── issues/                   # ローカル Issue 管理
 ```
 

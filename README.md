@@ -44,25 +44,24 @@ npx folio-agent-init
 
 ## Architecture
 
+**ビルド時**: 利用者サイトの成果物から知識ファイルを生成する。
+
 ```mermaid
 flowchart LR
-    subgraph Build["ビルド時"]
-        Dist["利用者サイトの dist/ + knowledge/\n(+ Zenn記事・任意)"] --> CLI["folio-agent-ingest\n(glob選択→HTML→text→token計測)"]
-        CLI --> KnowledgeJson["knowledge.json"]
-    end
+    Dist["利用者サイトの dist/ + knowledge/\n(+ Zenn記事・任意)"] --> CLI["folio-agent-ingest\n(glob選択 → HTML→text → token計測)"]
+    CLI --> KnowledgeJson["knowledge.json"]
+```
 
-    subgraph Runtime["実行時（Cloudflare Workers）"]
-        Widget["&lt;folio-agent-widget&gt;\n(Shadow DOM)"] -->|"POST /api/chat"| Handler["createChatHandler"]
-        Handler --> Graph["LangGraph StateGraph"]
-        Graph --> Guard["input_guard\n(D1でレート制限判定)"]
-        Guard -->|"制限内"| Route["route_message\n(キーワード分類)"]
-        Guard -->|"超過"| Log["log"]
-        Route --> Generate["generate\n(Gemini + knowledge.json)"]
-        Generate --> Log
-        Log --> D1[("D1: chat_logs")]
-    end
+**実行時（Cloudflare Workers）**: knowledge.json はビルド成果物としてサイトと同一デプロイに同梱され、`createChatHandler` が LangGraph StateGraph の4ノードで処理する。
 
-    KnowledgeJson -.->|"ビルド成果物に同梱"| Generate
+```mermaid
+flowchart TD
+    Widget["&lt;folio-agent-widget&gt;"] -->|"POST /api/chat"| Guard["input_guard\n(D1でレート制限判定)"]
+    Guard -->|"制限内"| Route["route_message\n(キーワード分類)"]
+    Guard -->|"超過"| Log["log"]
+    Route --> Generate["generate\n(Gemini + knowledge.json)"]
+    Generate --> Log
+    Log --> D1[("D1: chat_logs")]
 ```
 
 ## Tech Stack
@@ -157,17 +156,12 @@ D1 スキーマは `packages/handler/migrations/0001_init.sql` を `wrangler d1 
 
 ## Design Decisions
 
-- **CAGを選ぶ理由**: 知識源がLLMのコンテキストに余裕で収まる規模では、検索基盤を足すのは過剰。ベクトルDBとembeddingパイプラインを持たないことで壊れる部品が減り、利用者のセットアップも軽くなる。知識が肥大してコンテキスト・コスト・応答品質が劣化したらRAGへ切り替えるべき境界が存在し、境界を知った上で手前側を選ぶのが本リポの主張。作者の [order-system-migration](https://github.com/yktsnet/order-system-migration)（Text-to-SQL）・[order-system-rag](https://github.com/yktsnet/order-system-rag)（RAG）が「質問の性質」でツールを選んだのに対し、本リポは「知識の規模」で選ぶ第3の判断軸を実証する。
-- **独立OSS + dogfoodingを選ぶ理由**: サイト本体とは独立したnpmパッケージとして開発し、実サイトへの組み込みで動作を検証する。ボットの知識はビルド時取り込みでサイトに自動追従するため、同期のための人手に依存しない。テンプレートリポは不採用（fork後の改善が届かずOSSとして育たないため）。v1のサポート対象は「distを吐く静的サイト + Cloudflare Workers」のみに限定し、汎用化のコスト（設定面の肥大・多フレームワーク対応）は利用者が現れてから払う。
-- **Cloudflare Workers + LangGraph.jsを選ぶ理由**: Astro/Next + Cloudflare/Vercelが主流の層に対し、npm install + wrangler deployで完結するTS製が導入障壁を最小にする。Python + 別ホストは利用者に常駐サーバを要求する。素の関数呼び出しでなくLangGraphなのは、入力ガード→経路分岐→生成→ログというグラフ構造を宣言的に書けるため。バンドルサイズへの配慮として使うのはStateGraphのコアのみ。
-- **Gemini無料枠を既定にする理由**: 常時公開でコストゼロを維持する。生成エンジンが何かは主題（CAGという知識設計）を揺るがさない。無料枠は入力が学習に使われ得るが、知識源は公開情報のみで、訪問者の入力もその前提を開示ページに明記するため許容。無料枠が枯渇した日は「本日の受付は終了 + Contact誘導」を返し、沈黙させない。
-- **知識指定を「dist走査 + URLグロブ」にする理由**: 読み取りはファイルアクセス（クロール不要・ビルドと同居）、指定子はURL（利用者は自サイトのURL構造だけ知っていればよい）の合成。実行時クロールや手書きの単一JSON知識ファイルは同期漏れが人手依存になるため避けた。補足知識はURLパスをミラーした `knowledge/` ディレクトリに明示配置し、「入れたものだけ入る」を保つ。
-- **知識の配送をv1で同一デプロイに同梱する理由**: 知識をLLMのコンテキストに渡した時点で公開扱いとする原則のもと、生成場所と消費場所のズレを設計ごと無くす。デプロイ1つで知識とサイトが原子的に一致し、追加トークンやKVが要らない。Cloudflare外のサイト向け配送（知識を静的アセットとして公開し独立Workerがfetchする方式）は、生成段階と配送段階を分離した境界だけ残して将来追加できるようにしている。
-- **ログをD1に取り、同意ボタンを置かない理由**: ログは品質改善（質問傾向・Contact転換の把握）に直結し、無料枠・テーブル1つ・書き込み1行/会話で運用負荷はほぼない。IP + 入力内容は個人関連情報に当たり得るため、チャット初回の一文と詳細ページへのリンクで通知する。明示的同意の要求は一般のチャットウィジェットの水準に照らして過剰で、UXを損なうため置かない。
-- **レート制限をD1ログの集計で行う理由**: `chat_logs` のCOUNTをそのままカウンタに流用し、別の仕組みを持たない。Workers Rate Limiting bindingは日次上限が表現しづらく、Durable Objectsはこの規模に過剰。上限は事前に掲げず、超過時に「上限に達しました。お急ぎはContactへ」と返して誘導に転化する。NATやモバイル回線で複数人が同一IPになる限界は、数字を環境変数で即調整できる形で吸収する。
-- **ウィジェットを自前で書く理由**: 既製チャットウィジェットは重く、「クリックするまで一切主張しない」要件（自動ポップアップなし・初回吹き出しなし・未クリック時の通信なし）を制御しづらい。テーマはCSSカスタムプロパティで受ける（Shadow DOMでもhostから継承される標準機構で、利用側はグローバルCSS数行、未設定なら既定デザイン）。回答表示はプレーンテキスト固定とし、Markdownレンダラの重さとXSS面の管理コストを受付チャットの短文回答のために払わない。
-- **経路分類をキーワードによる決定的分岐にする理由**: 経路判定に失敗しても実害が小さい（知識プロンプトは全経路共通で、違うのは口調・振る舞いの指示だけ）分岐に、追加のLLM呼び出し（レイテンシ・コスト・失敗点）を足さない。決定的なのでテストがキーワード→経路の対応表そのものになる。誤判定の兆候が増えたらLLM判定への切り替えを検討する。
-- **npm workspacesを選ぶ理由**: 依存が軽い2パッケージ規模ではpnpmの利点（ディスク効率・厳密な依存解決）が効かず、Nodeさえあれば動く構成がコントリビュータへの制約を減らす。corepack前提の手順は権限の強い環境要求になるため避けた。パッケージ数が増えて実害が出たら再検討する。
+導入判断に効く要点のみ。各判断の全文（何を捨てたか・どの境界で再検討するか）は [docs/design-decisions.md](docs/design-decisions.md) にある。
+
+- **CAG（検索なし）**: 知識源が小規模ならベクトル検索基盤は過剰。RAGへ切り替えるべき境界を知った上で、手前側を選ぶ。
+- **v1 のスコープ限定**: サポート対象は「distを吐く静的サイト + Cloudflare Workers」のみ。汎用化のコストは利用者が現れてから払う。
+- **Gemini 無料枠が既定**: 常時公開でコストゼロを維持する。入力が学習に使われ得る前提は、開示ページで訪問者に通知する。
+- **ログは D1・同意ボタンなし**: チャット初回の一文と詳細ページへのリンクで通知する。レート制限もこのログの COUNT を流用し、別の仕組みを持たない。
 
 ## Scope
 
