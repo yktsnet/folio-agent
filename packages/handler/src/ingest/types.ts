@@ -1,3 +1,5 @@
+import type { Language } from "../chat/types.js";
+
 export interface IngestConfig {
   /** Absolute or cwd-relative path to the built site (e.g. "dist"). */
   distDir: string;
@@ -11,6 +13,19 @@ export interface IngestConfig {
   zenn?: ZennIngestConfig;
   /** Token threshold above which the CLI warns that CAG may no longer fit. */
   tokenWarningThreshold?: number;
+  /** UI language captured by `folio-agent-init`. Ignored by ingest itself. */
+  language?: Language;
+  /** Widget theme colors captured by `folio-agent-init`. Ignored by ingest itself. */
+  theme?: ThemeColors;
+}
+
+export interface ThemeColors {
+  /** Hex color for `--folio-agent-accent`, e.g. "#2563eb". */
+  accent: string;
+  /** Hex color for `--folio-agent-surface`, e.g. "#ffffff". */
+  surface: string;
+  /** Hex color for `--folio-agent-text`, e.g. "#111827". */
+  text: string;
 }
 
 export interface ZennIngestConfig {
