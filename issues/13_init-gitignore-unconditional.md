@@ -1,8 +1,8 @@
 ## init: .dev.vars の .gitignore 保護を Gemini キー入力の有無に依存させない
 id: 13
 branch-slug: init-gitignore-unconditional
-github_issue:
-status: open
+github_issue: 24
+status: close
 type: fix
 対象: packages/handler/src/init/cli.ts, packages/handler/test/init/cli.test.ts（無ければ既存の init 系テストファイルを確認）
 内容: ウィザードで Gemini API キー入力をスキップした場合、`.gitignore` に `.dev.vars` が一切追記されない。案内通りに後から手動で `.dev.vars` にキーを書いても無防備なまま残るため、`.dev.vars` の gitignore 追記をキー入力の有無から切り離す。
