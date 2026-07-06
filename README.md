@@ -1,3 +1,5 @@
+[🇯🇵 日本語](README.md) | [🇬🇧 English](README.en.md)
+
 # folio-agent
 
 [![CI](https://github.com/yktsnet/folio-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/yktsnet/folio-agent/actions/workflows/ci.yml)
