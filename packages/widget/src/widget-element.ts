@@ -1,7 +1,45 @@
 import { WIDGET_STYLES } from "./styles.js";
 import type { ChatMessage, ChatResponseBody } from "./types.js";
 
-const DISCLOSURE_TEXT = "入力内容は品質改善のため記録されます。";
+type Language = "ja" | "en";
+
+interface WidgetText {
+  toggleAriaLabel: string;
+  inputPlaceholder: string;
+  submitLabel: string;
+  disclosureText: string;
+  policyLinkText: string;
+  configErrorText: string;
+  answerFallbackText: string;
+  networkErrorText: string;
+}
+
+const WIDGET_TEXT: Record<Language, WidgetText> = {
+  ja: {
+    toggleAriaLabel: "チャットを開く",
+    inputPlaceholder: "メッセージを入力",
+    submitLabel: "送信",
+    disclosureText: "入力内容は品質改善のため記録されます。",
+    policyLinkText: "利用データの扱いについて",
+    configErrorText: "設定エラー: endpoint属性が指定されていません。",
+    answerFallbackText: "回答を取得できませんでした。しばらくしてから再度お試しください。",
+    networkErrorText: "通信エラーが発生しました。しばらくしてから再度お試しください。",
+  },
+  en: {
+    toggleAriaLabel: "Open chat",
+    inputPlaceholder: "Type a message",
+    submitLabel: "Send",
+    disclosureText: "Your input is logged for quality improvement.",
+    policyLinkText: "About data usage",
+    configErrorText: "Configuration error: the endpoint attribute is not set.",
+    answerFallbackText: "Couldn't get an answer. Please try again later.",
+    networkErrorText: "A network error occurred. Please try again later.",
+  },
+};
+
+function resolveLanguage(value: string | null): Language {
+  return value === "en" ? "en" : "ja";
+}
 
 export class FolioAgentWidgetElement extends HTMLElement {
   static readonly tagName = "folio-agent-widget";
@@ -12,8 +50,11 @@ export class FolioAgentWidgetElement extends HTMLElement {
   #panelEl?: HTMLElement;
   #messagesEl?: HTMLElement;
   #inputEl?: HTMLInputElement;
+  #text: WidgetText = WIDGET_TEXT.ja;
 
   connectedCallback(): void {
+    this.#text = WIDGET_TEXT[resolveLanguage(this.getAttribute("lang"))];
+
     const root = this.attachShadow({ mode: "open" });
 
     const style = document.createElement("style");
@@ -23,7 +64,7 @@ export class FolioAgentWidgetElement extends HTMLElement {
     const toggle = document.createElement("button");
     toggle.className = "toggle";
     toggle.type = "button";
-    toggle.setAttribute("aria-label", "チャットを開く");
+    toggle.setAttribute("aria-label", this.#text.toggleAriaLabel);
     toggle.textContent = "💬";
     toggle.addEventListener("click", () => this.#togglePanel());
     root.appendChild(toggle);
@@ -39,11 +80,11 @@ export class FolioAgentWidgetElement extends HTMLElement {
     const form = document.createElement("form");
     const input = document.createElement("input");
     input.type = "text";
-    input.placeholder = "メッセージを入力";
+    input.placeholder = this.#text.inputPlaceholder;
     input.autocomplete = "off";
     const submit = document.createElement("button");
     submit.type = "submit";
-    submit.textContent = "送信";
+    submit.textContent = this.#text.submitLabel;
     form.appendChild(input);
     form.appendChild(submit);
     form.addEventListener("submit", (event) => {
@@ -79,7 +120,7 @@ export class FolioAgentWidgetElement extends HTMLElement {
     if (!this.#messagesEl) return;
     const disclosure = document.createElement("div");
     disclosure.className = "disclosure";
-    disclosure.append(`${DISCLOSURE_TEXT} `);
+    disclosure.append(`${this.#text.disclosureText} `);
 
     const policyHref = this.getAttribute("policy-href");
     if (policyHref) {
@@ -87,7 +128,7 @@ export class FolioAgentWidgetElement extends HTMLElement {
       link.href = policyHref;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
-      link.textContent = "利用データの扱いについて";
+      link.textContent = this.#text.policyLinkText;
       disclosure.appendChild(link);
     }
 
@@ -102,7 +143,7 @@ export class FolioAgentWidgetElement extends HTMLElement {
 
     const endpoint = this.getAttribute("endpoint");
     if (!endpoint) {
-      this.#appendMessage({ role: "assistant", text: "設定エラー: endpoint属性が指定されていません。" });
+      this.#appendMessage({ role: "assistant", text: this.#text.configErrorText });
       return;
     }
 
@@ -115,12 +156,12 @@ export class FolioAgentWidgetElement extends HTMLElement {
       const body = (await response.json()) as ChatResponseBody;
       this.#appendMessage({
         role: "assistant",
-        text: body.answer ?? "回答を取得できませんでした。しばらくしてから再度お試しください。",
+        text: body.answer ?? this.#text.answerFallbackText,
       });
     } catch {
       this.#appendMessage({
         role: "assistant",
-        text: "通信エラーが発生しました。しばらくしてから再度お試しください。",
+        text: this.#text.networkErrorText,
       });
     }
   }

@@ -122,4 +122,60 @@ describe("FolioAgentWidgetElement", () => {
     const messages = root.querySelectorAll(".message.assistant");
     expect(messages[messages.length - 1].textContent).toMatch(/endpoint属性/);
   });
+
+  describe("lang=en", () => {
+    it("renders English placeholder, submit label, and disclosure text", () => {
+      const el = mount({ endpoint: "/api/chat", lang: "en", "policy-href": "/data-policy" });
+      const root = shadow(el);
+
+      expect(root.querySelector<HTMLInputElement>("input")?.placeholder).toBe("Type a message");
+      expect(root.querySelector<HTMLButtonElement>(".toggle")?.getAttribute("aria-label")).toBe("Open chat");
+      expect(root.querySelector("form button[type='submit']")?.textContent).toBe("Send");
+
+      root.querySelector<HTMLButtonElement>(".toggle")!.click();
+      const disclosure = root.querySelector(".disclosure");
+      expect(disclosure?.textContent).toContain("Your input is logged for quality improvement.");
+      expect(disclosure?.querySelector("a")?.textContent).toBe("About data usage");
+    });
+
+    it("shows an English config error when endpoint is missing", async () => {
+      const el = mount({ lang: "en" });
+      const root = shadow(el);
+      root.querySelector<HTMLButtonElement>(".toggle")!.click();
+
+      const input = root.querySelector<HTMLInputElement>("input")!;
+      input.value = "hi";
+      root.querySelector("form")!.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+
+      await Promise.resolve();
+
+      const messages = root.querySelectorAll(".message.assistant");
+      expect(messages[messages.length - 1].textContent).toMatch(/endpoint attribute/);
+    });
+
+    it("shows an English network error message on fetch failure", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
+
+      const el = mount({ endpoint: "/api/chat", lang: "en" });
+      const root = shadow(el);
+      root.querySelector<HTMLButtonElement>(".toggle")!.click();
+
+      const input = root.querySelector<HTMLInputElement>("input")!;
+      input.value = "hi";
+      root.querySelector("form")!.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+
+      await Promise.resolve();
+      await Promise.resolve();
+
+      const messages = root.querySelectorAll(".message.assistant");
+      expect(messages[messages.length - 1].textContent).toMatch(/network error/);
+    });
+
+    it("falls back to ja for an unrecognized lang attribute", () => {
+      const el = mount({ endpoint: "/api/chat", lang: "fr" });
+      const root = shadow(el);
+
+      expect(root.querySelector<HTMLInputElement>("input")?.placeholder).toBe("メッセージを入力");
+    });
+  });
 });

@@ -59,4 +59,42 @@ describe("buildSystemPrompt", () => {
     expect(thoughts).not.toContain(contactUrl);
     expect(works).not.toContain(contactUrl);
   });
+
+  describe("language: en", () => {
+    it.each(ROUTES)("includes the no-fabrication principle in English for %s", (route) => {
+      const prompt = buildSystemPrompt("knowledge body", route, undefined, "en");
+      expect(prompt).toContain("Do not guess or invent");
+      expect(prompt).toContain("doesn't cover that point");
+    });
+
+    it.each(ROUTES)("includes the plain-text output instruction in English for %s", (route) => {
+      const prompt = buildSystemPrompt("knowledge body", route, undefined, "en");
+      expect(prompt).toContain("Markdown formatting");
+      expect(prompt).toContain("plain text");
+    });
+
+    it("switches route-specific instructions per route in English", () => {
+      const thoughts = buildSystemPrompt("knowledge body", "thoughts", undefined, "en");
+      const works = buildSystemPrompt("knowledge body", "works", undefined, "en");
+      const inquiry = buildSystemPrompt("knowledge body", "inquiry", undefined, "en");
+
+      expect(thoughts).toContain("thinking");
+      expect(works).toContain("Works");
+      expect(works).toContain("Zenn");
+      expect(inquiry).toContain("Contact page");
+      expect(works).not.toBe(inquiry);
+    });
+
+    it("embeds contactUrl into the English inquiry instruction when provided", () => {
+      const inquiry = buildSystemPrompt("knowledge body", "inquiry", "https://example.com/contact", "en");
+      expect(inquiry).toContain("https://example.com/contact");
+      expect(inquiry).toContain("Contact page");
+    });
+
+    it("does not leak Japanese wording into English prompts", () => {
+      const prompt = buildSystemPrompt("knowledge body", "inquiry", undefined, "en");
+      expect(prompt).not.toContain("知識");
+      expect(prompt).not.toContain("訪問者");
+    });
+  });
 });

@@ -1,16 +1,26 @@
-import type { ChatRoute } from "./types.js";
+import type { ChatRoute, Language } from "./types.js";
+import { DEFAULT_LANGUAGE } from "./types.js";
 
-const INQUIRY_KEYWORDS = ["依頼", "相談", "見積", "発注", "案件", "お願いしたい"];
-const WORKS_KEYWORDS = ["works", "作品", "実績", "zenn", "記事"];
+const INQUIRY_KEYWORDS: Record<Language, string[]> = {
+  ja: ["依頼", "相談", "見積", "発注", "案件", "お願いしたい"],
+  en: ["hire", "quote", "estimate", "commission", "inquiry", "work with you", "project request"],
+};
 
-export function classifyRoute(input: string): Exclude<ChatRoute, "rate_limited"> {
+const WORKS_KEYWORDS: Record<Language, string[]> = {
+  ja: ["works", "作品", "実績", "zenn", "記事"],
+  en: ["works", "portfolio", "article", "zenn", "project"],
+};
+
+export function classifyRoute(input: string, language: Language = DEFAULT_LANGUAGE): Exclude<ChatRoute, "rate_limited"> {
   const lower = input.toLowerCase();
+  const inquiryKeywords = INQUIRY_KEYWORDS[language];
+  const worksKeywords = WORKS_KEYWORDS[language];
 
-  if (INQUIRY_KEYWORDS.some((keyword) => input.includes(keyword))) {
+  if (inquiryKeywords.some((keyword) => lower.includes(keyword))) {
     return "inquiry";
   }
 
-  if (WORKS_KEYWORDS.some((keyword) => lower.includes(keyword))) {
+  if (worksKeywords.some((keyword) => lower.includes(keyword))) {
     return "works";
   }
 
