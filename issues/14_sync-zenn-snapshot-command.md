@@ -1,8 +1,8 @@
 ## 新規CLI `folio-agent-sync-zenn`: zenn記事をCI安全なスナップショットとして同期
 id: 14
 branch-slug: sync-zenn-snapshot-command
-github_issue:
-status: open
+github_issue: 26
+status: close
 type: feat
 対象: packages/handler/package.json, packages/handler/src/sync/cli.ts (新規), packages/handler/src/ingest/types.ts, packages/handler/src/ingest/generate.ts, packages/handler/test/sync/cli.test.ts (新規), packages/handler/test/ingest/generate.test.ts
 内容: `config.zenn.articlesDir`（多くの場合ローカル限定・privateリポ由来）に依存せずCIでもzenn記事の知識を含められるよう、ローカルで一度スキャンした結果をリポにコミット可能なJSONスナップショットとして書き出す非対話コマンドを新設し、`generateKnowledge`がそのスナップショットを優先的に使えるようにする。
