@@ -6,6 +6,8 @@ import {
   buildKnowledgeImportPath,
   buildThemeCss,
   deriveEndpointPath,
+  ensureGitignoreEntry,
+  resolveThemeCssPath,
   upsertDevVar,
 } from "../../src/init/writers.js";
 import type { WizardAnswers } from "../../src/init/questions.js";
@@ -149,5 +151,50 @@ describe("upsertDevVar", () => {
 
   it("replaces the value in place when the key already exists", () => {
     expect(upsertDevVar("GEMINI_API_KEY=old\nOTHER=1\n", "GEMINI_API_KEY", "new")).toBe("GEMINI_API_KEY=new\nOTHER=1\n");
+  });
+});
+
+describe("ensureGitignoreEntry", () => {
+  it("appends the entry when the file is empty", () => {
+    expect(ensureGitignoreEntry("", ".dev.vars")).toEqual({ content: ".dev.vars\n", changed: true });
+  });
+
+  it("appends the entry after existing lines", () => {
+    expect(ensureGitignoreEntry("node_modules\n", ".dev.vars")).toEqual({
+      content: "node_modules\n.dev.vars\n",
+      changed: true,
+    });
+  });
+
+  it("reports no change when a line already starts with the entry", () => {
+    expect(ensureGitignoreEntry("node_modules\n.dev.vars\n", ".dev.vars")).toEqual({
+      content: "node_modules\n.dev.vars\n",
+      changed: false,
+    });
+  });
+
+  it("treats a line-start match as sufficient, without interpreting wider patterns", () => {
+    expect(ensureGitignoreEntry(".dev.vars.local\n", ".dev.vars")).toEqual({
+      content: ".dev.vars.local\n",
+      changed: false,
+    });
+  });
+});
+
+describe("resolveThemeCssPath", () => {
+  it("writes to public/ when it exists and neither location has a file yet", () => {
+    expect(resolveThemeCssPath(true, false, false)).toBe("public/folio-agent.theme.css");
+  });
+
+  it("writes to the root when public/ doesn't exist and neither location has a file yet", () => {
+    expect(resolveThemeCssPath(false, false, false)).toBe("folio-agent.theme.css");
+  });
+
+  it("reuses the existing public/ file even if public/ itself is reported absent", () => {
+    expect(resolveThemeCssPath(false, true, false)).toBe("public/folio-agent.theme.css");
+  });
+
+  it("reuses the existing root file even when public/ now exists", () => {
+    expect(resolveThemeCssPath(true, false, true)).toBe("folio-agent.theme.css");
   });
 });

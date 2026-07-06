@@ -6,6 +6,9 @@ import type { WizardAnswers } from "./questions.js";
 
 const INGEST_COMMAND_PREFIX = "folio-agent-ingest";
 
+export const THEME_CSS_FILENAME = "folio-agent.theme.css";
+export const PUBLIC_DIR_NAME = "public";
+
 /** Builds `folio-agent.config.json` content, preserving fields the wizard never asks about. */
 export function buildConfigJson(answers: WizardAnswers, previous?: IngestConfig): IngestConfig {
   const config: IngestConfig = {
@@ -41,6 +44,18 @@ export function buildThemeCss(theme: ThemeColors): string {
     "}",
     "",
   ].join("\n");
+}
+
+/**
+ * Decides where `folio-agent.theme.css` should be written. A file outside `public/` (or its
+ * framework equivalent) isn't served by most static-site pipelines (Astro, Next, etc.), so a
+ * `public/` directory is preferred when present. Re-runs reuse whichever location already holds
+ * the file, so switching `public/` in and out of existence mid-project doesn't orphan a stale copy.
+ */
+export function resolveThemeCssPath(hasPublicDir: boolean, existingPublicFile: boolean, existingRootFile: boolean): string {
+  if (existingPublicFile) return `${PUBLIC_DIR_NAME}/${THEME_CSS_FILENAME}`;
+  if (existingRootFile) return THEME_CSS_FILENAME;
+  return hasPublicDir ? `${PUBLIC_DIR_NAME}/${THEME_CSS_FILENAME}` : THEME_CSS_FILENAME;
 }
 
 /**
@@ -127,4 +142,21 @@ export function upsertDevVar(content: string, key: string, value: string): strin
   }
 
   return `${lines.join("\n")}\n`;
+}
+
+/**
+ * Ensures `entry` appears as its own line in `.gitignore` content, appending it if no existing
+ * line starts with it. Intentionally doesn't interpret comments or wider patterns (e.g. `*.vars`);
+ * a duplicate append is harmless, so a plain line-start check is enough.
+ */
+export function ensureGitignoreEntry(content: string, entry: string): { content: string; changed: boolean } {
+  const lines = content.length > 0 ? content.split("\n") : [];
+  const alreadyPresent = lines.some((line) => line.startsWith(entry));
+  if (alreadyPresent) {
+    return { content, changed: false };
+  }
+
+  const trimmed = content.replace(/\n+$/, "");
+  const nextContent = trimmed.length > 0 ? `${trimmed}\n${entry}\n` : `${entry}\n`;
+  return { content: nextContent, changed: true };
 }
