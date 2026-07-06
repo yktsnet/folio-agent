@@ -2,6 +2,7 @@
 import { existsSync, statSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import * as clack from "@clack/prompts";
 import type { Language } from "../chat/types.js";
 import type { IngestConfig } from "../ingest/types.js";
@@ -129,6 +130,27 @@ async function readTextOrEmpty(path: string): Promise<string> {
   return existsSync(path) ? readFile(path, "utf-8") : "";
 }
 
+export interface DevVarsAndGitignorePlan {
+  nextDevVars: string | undefined;
+  gitignoreResult: { content: string; changed: boolean };
+}
+
+/**
+ * Computes what to write to `.dev.vars` and `.gitignore`. `.gitignore` protection for
+ * `.dev.vars` is unconditional — independent of whether a Gemini API key was entered this run —
+ * because a skipped key is commonly filled in by hand afterward per the wizard's own guidance
+ * (see `geminiApiKeySkipNote`), and by then the file must already be gitignored.
+ */
+export function planDevVarsAndGitignore(
+  geminiApiKey: string | undefined,
+  devVarsContent: string,
+  gitignoreContent: string,
+): DevVarsAndGitignorePlan {
+  const nextDevVars = geminiApiKey ? upsertDevVar(devVarsContent, "GEMINI_API_KEY", geminiApiKey) : undefined;
+  const gitignoreResult = ensureGitignoreEntry(gitignoreContent, DEV_VARS_PATH);
+  return { nextDevVars, gitignoreResult };
+}
+
 function seedDefaults(previous: IngestConfig | undefined): WizardAnswers {
   if (!previous) return DEFAULT_WIZARD_ANSWERS;
   return {
@@ -171,11 +193,11 @@ async function main(): Promise<void> {
   const nextBuildScript = appendIngestToBuildScript(scripts.build, CONFIG_PATH, KNOWLEDGE_OUTPUT_PATH);
   const buildScriptChanged = nextBuildScript !== (scripts.build ?? "");
 
-  const nextDevVars = answers.geminiApiKey
-    ? upsertDevVar(await readTextOrEmpty(DEV_VARS_PATH), "GEMINI_API_KEY", answers.geminiApiKey)
-    : undefined;
-  const gitignoreResult =
-    nextDevVars !== undefined ? ensureGitignoreEntry(await readTextOrEmpty(GITIGNORE_PATH), DEV_VARS_PATH) : undefined;
+  const { nextDevVars, gitignoreResult } = planDevVarsAndGitignore(
+    answers.geminiApiKey,
+    await readTextOrEmpty(DEV_VARS_PATH),
+    await readTextOrEmpty(GITIGNORE_PATH),
+  );
 
   const summaryLines = [
     text.summaryConfigLine,
@@ -189,10 +211,10 @@ async function main(): Promise<void> {
   ];
   if (nextDevVars !== undefined) {
     summaryLines.push(text.summaryDevVarsLine);
-    summaryLines.push(
-      gitignoreResult?.changed ? text.summaryGitignoreAppendedLine : text.summaryGitignoreAlreadyPresentLine,
-    );
   }
+  summaryLines.push(
+    gitignoreResult.changed ? text.summaryGitignoreAppendedLine : text.summaryGitignoreAlreadyPresentLine,
+  );
   clack.note(summaryLines.join("\n"), text.summaryTitle);
 
   const shouldWrite = await clack.confirm({ message: text.confirmMessage, initialValue: true });
@@ -216,9 +238,9 @@ async function main(): Promise<void> {
 
   if (nextDevVars !== undefined) {
     await writeFile(DEV_VARS_PATH, nextDevVars);
-    if (gitignoreResult?.changed) {
-      await writeFile(GITIGNORE_PATH, gitignoreResult.content);
-    }
+  }
+  if (gitignoreResult.changed) {
+    await writeFile(GITIGNORE_PATH, gitignoreResult.content);
   }
 
   const endpoint = deriveEndpointPath(answers.apiRoutePath ?? DEFAULT_WIZARD_ANSWERS.apiRoutePath ?? "functions/api/chat.ts");
@@ -245,14 +267,16 @@ async function main(): Promise<void> {
   clack.note(introNotes.join("\n\n"));
   console.log(`\n${snippet}\n`);
 
-  if (nextDevVars !== undefined) {
-    clack.note(gitignoreResult?.changed ? text.gitignoreAppendedNote : text.gitignoreAlreadyPresentNote);
-  }
+  clack.note(gitignoreResult.changed ? text.gitignoreAppendedNote : text.gitignoreAlreadyPresentNote);
   clack.note(text.d1Note);
   clack.outro(text.outroTitle);
 }
 
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+// Only run the wizard when executed directly (the bin entry point); importing this module for
+// unit tests (e.g. `planDevVarsAndGitignore`) must not trigger the interactive CLI as a side effect.
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
