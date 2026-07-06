@@ -40,7 +40,9 @@ folio-agent/
 │       └── test/
 ├── README.md                 # 利用ドキュメント + 設計判断ダイジェスト
 ├── docs/
-│   └── design-decisions.md   # 設計判断の全文（正はこちら）
+│   ├── design-decisions.md   # 設計判断の全文（正はこちら）
+│   ├── usage.md              # 手動セットアップ手順と API 詳細
+│   └── release.md            # リリース手順（タグ駆動 + Trusted Publishing）
 └── issues/                   # ローカル Issue 管理
 ```
 

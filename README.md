@@ -34,7 +34,7 @@ npx folio-agent-init
 
 テーマの微調整は `folio-agent.theme.css` の編集か `npx folio-agent-init` の再実行で行い、自サイトの dev サーバーにそのまま反映される。再実行は全質問を現在値デフォルトで聞き直し、書き込み前に変更内容を確認できる。
 
-ウィザードを使わず手で設定する場合は [Usage](#usage--api) を参照。
+ウィザードを使わず手で設定する場合は [docs/usage.md](docs/usage.md) を参照。
 
 ## Overview
 
@@ -78,81 +78,11 @@ flowchart TD
 
 ## Usage / API
 
-### 1. Knowledge Generation (build time)
+ウィザードを使わず手で設定する場合の手順と、config・handler・widget の API 詳細は [docs/usage.md](docs/usage.md) にある。概要だけ示す:
 
-```bash
-npx folio-agent-ingest folio-agent.config.json knowledge.json
-```
-
-```jsonc
-// folio-agent.config.json
-{
-  "distDir": "dist",
-  "include": ["/", "/works/**", "/about"],
-  "exclude": ["/works/draft-*"],
-  "knowledgeDir": "knowledge"
-}
-```
-
-`IngestConfig`（`distDir` / `include` / `exclude` / `knowledgeDir` / `zenn` / `tokenWarningThreshold`）は `@folio-agent/handler` から型で公開されている。`language` と `theme` は `folio-agent-init` がウィザードの回答を保持するためのフィールドで、ingest 自体は読まない。`knowledgeDir` に置いた Markdown は URL パスをミラーした構造で、include/exclude の対象外（明示配置したものだけが入る）。
-
-Zenn 記事も知識に含める場合は `zenn` を指定する（省略すればスキップ）。zenn.dev への通信は行わず、Zenn CLI の `articles/` ディレクトリをローカルで読み、frontmatter が `published: true` の記事だけを取り込む:
-
-```jsonc
-// folio-agent.config.json（抜粋）
-{
-  "zenn": {
-    "articlesDir": "../zenn-content/articles",
-    "baseUrl": "https://zenn.dev/<username>/articles"
-  }
-}
-```
-
-### 2. Chat Handler (Pages Function / Worker)
-
-```ts
-import { createChatHandler, createGeminiGenerator } from "@folio-agent/handler";
-import knowledgeDoc from "../knowledge.json";
-
-const knowledge = knowledgeDoc.pages.map((p) => `# ${p.url}\n\n${p.text}`).join("\n\n");
-
-interface Env {
-  DB: D1Database;
-  GEMINI_API_KEY: string;
-}
-
-export default {
-  fetch: (request: Request, env: Env) =>
-    createChatHandler({
-      db: env.DB,
-      generateAnswer: createGeminiGenerator({
-        apiKey: env.GEMINI_API_KEY,
-        knowledge,
-        contactUrl: "https://example.com/contact",
-      }),
-    })(request),
-};
-```
-
-`contactUrl` を渡すと、依頼・相談（inquiry）経路の回答が具体的な URL で Contact ページを案内する。省略した場合は URL なしで「Contactページ」とだけ案内する。
-
-`language`（`"ja" | "en"`、既定 `ja`）は `createChatHandler`（上限通知の定型文・ルーティングキーワード）と `createGeminiGenerator`（システムプロンプト）の両方に渡す。片方だけ渡すと定型文とプロンプトの言語がずれる。
-
-D1 スキーマは `packages/handler/migrations/0001_init.sql` を `wrangler d1 migrations apply` で適用する。`chat_logs` テーブル1つがログとレート制限カウンタ（10分3問・日次10回、`rateLimitConfig` で変更可）を兼ねる。
-
-### 3. Widget (frontend)
-
-```html
-<folio-agent-widget endpoint="/api/chat" policy-href="/data-policy"></folio-agent-widget>
-<script type="module">
-  import { defineFolioAgentWidget } from "@folio-agent/widget";
-  defineFolioAgentWidget();
-</script>
-```
-
-- `lang="en"` を付けると UI 文言（プレースホルダ・送信ボタン・開示文・エラー文）が英語になる。未指定は日本語。
-- `policy-href` の指し先ページには、①IPベースのレート制限（10分3問・日次10回）を行っていること、②入力内容と応答を D1 にログとして記録していること、③生成に使う Gemini API の無料枠は入力が学習に利用され得ることの3点を書く。ページ自体は導入サイト側の責務（folio-agent はテンプレートを同梱しない）。
-- 配色・フォントは CSS カスタムプロパティ6トークン（`--folio-agent-surface` / `text` / `muted` / `accent` / `accent-contrast` / `font`）で上書きできる。**未指定でもホストの配色（`color` / `color-scheme` 継承とCSSシステムカラー）から既定値を導出するため、サイトのライト/ダークどちらにも自然に馴染む**。変えたい場合のみ、上記トークンを上書きする。
+1. **Knowledge Generation（ビルド時）**: `folio-agent-ingest` が `folio-agent.config.json` の URL グロブに従って `dist/` と `knowledge/`（+ Zenn 記事・任意）から knowledge.json を作る。
+2. **Chat Handler（Pages Function / Worker）**: `createChatHandler` + `createGeminiGenerator` を数行で組み立てる。`contactUrl` で Contact 誘導、`language` で ja/en を切り替える。
+3. **Widget（フロント）**: `<folio-agent-widget>` を1行埋め込む。テーマは CSS カスタムプロパティ6トークン、UI 言語は `lang` 属性。
 
 ## Design Decisions
 
@@ -188,15 +118,7 @@ npm run build       # tsc -b
 
 D1 / Gemini を実際に使う手動検証は `packages/handler/dev/README.md` を参照（`wrangler dev` + ローカルD1で、v1の同一デプロイ構成を再現する使い捨てハーネス）。
 
-### リリース手順
-
-npm publish は `v*` タグの push をトリガーに GitHub Actions（`.github/workflows/release.yml`）が実施する。認証は npm の Trusted Publishing（OIDC）で、secrets にトークンは置かない。
-
-1. main で `npm version <x.y.z> -w @folio-agent/handler -w @folio-agent/widget --no-git-tag-version` を実行し、2パッケージのバージョンを揃えてコミットする。
-2. `git tag v<x.y.z>` を push する。
-3. CI が typecheck / test / build を通した上で `npm publish --provenance` を実行する（タグと package.json のバージョンが不一致だとジョブ冒頭で fail する）。
-
-初回のみ、npmjs.com のパッケージ設定（`@folio-agent/handler` / `@folio-agent/widget` それぞれ）で Trusted Publisher に GitHub Actions・リポジトリ `yktsnet/folio-agent`・ワークフローファイル `release.yml` を登録しておく。
+リリース手順（`v*` タグ → CI が Trusted Publishing で npm publish）は [docs/release.md](docs/release.md) を参照。
 
 ## License
 
