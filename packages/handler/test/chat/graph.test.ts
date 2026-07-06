@@ -55,4 +55,42 @@ describe("buildChatGraph", () => {
       expect.objectContaining({ route: "rate_limited", overLimit: true }),
     );
   });
+
+  describe("language: en", () => {
+    it("routes an English message to inquiry and generates in English mode", async () => {
+      const deps = makeDeps({ language: "en" });
+      const graph = buildChatGraph(deps);
+
+      const result = await graph.invoke({ input: "I'd like to hire you", ip: "1.2.3.4" });
+
+      expect(result.route).toBe("inquiry");
+      expect(deps.generateAnswer).toHaveBeenCalledWith("I'd like to hire you", "inquiry");
+    });
+
+    it("falls back to an English canned answer when generation fails", async () => {
+      const deps = makeDeps({
+        language: "en",
+        generateAnswer: vi.fn().mockRejectedValue(new Error("RESOURCE_EXHAUSTED")),
+      });
+      const graph = buildChatGraph(deps);
+
+      const result = await graph.invoke({ input: "tell me about your works", ip: "1.2.3.4" });
+
+      expect(result.answer).toMatch(/today's limit/);
+    });
+
+    it("short-circuits to an English canned answer when rate-limited", async () => {
+      const deps = makeDeps({
+        language: "en",
+        checkRateLimit: vi.fn().mockResolvedValue({ allowed: false, reason: "daily" }),
+      });
+      const graph = buildChatGraph(deps);
+
+      const result = await graph.invoke({ input: "hi", ip: "1.2.3.4" });
+
+      expect(result.overLimit).toBe(true);
+      expect(result.answer).toMatch(/today's limit/);
+      expect(deps.generateAnswer).not.toHaveBeenCalled();
+    });
+  });
 });

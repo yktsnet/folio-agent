@@ -1,5 +1,9 @@
 export type ChatRoute = "thoughts" | "works" | "inquiry" | "rate_limited";
 
+export type Language = "ja" | "en";
+
+export const DEFAULT_LANGUAGE: Language = "ja";
+
 export interface RateLimitConfig {
   shortWindowMinutes: number;
   shortWindowMax: number;
@@ -31,4 +35,5 @@ export interface ChatGraphDeps {
   checkRateLimit: (ip: string) => Promise<RateLimitResult>;
   generateAnswer: (input: string, route: ChatRoute) => Promise<string>;
   logChat: (entry: ChatLogEntry) => Promise<void>;
+  language?: Language;
 }

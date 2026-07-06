@@ -2,7 +2,7 @@ import { buildChatGraph } from "./graph.js";
 import { logChat } from "./log.js";
 import { checkRateLimit } from "./rate-limit.js";
 import type { GenerateAnswerFn } from "./gemini.js";
-import type { RateLimitConfig } from "./types.js";
+import type { Language, RateLimitConfig } from "./types.js";
 import { DEFAULT_RATE_LIMIT_CONFIG } from "./types.js";
 
 const MAX_INPUT_LENGTH = 1000;
@@ -11,6 +11,7 @@ export interface ChatHandlerConfig {
   db: D1Database;
   generateAnswer: GenerateAnswerFn;
   rateLimitConfig?: RateLimitConfig;
+  language?: Language;
 }
 
 export function createChatHandler(config: ChatHandlerConfig): (request: Request) => Promise<Response> {
@@ -18,6 +19,7 @@ export function createChatHandler(config: ChatHandlerConfig): (request: Request)
     checkRateLimit: (ip) => checkRateLimit(config.db, ip, new Date(), config.rateLimitConfig ?? DEFAULT_RATE_LIMIT_CONFIG),
     generateAnswer: config.generateAnswer,
     logChat: (entry) => logChat(config.db, entry),
+    language: config.language,
   });
 
   return async (request: Request): Promise<Response> => {
