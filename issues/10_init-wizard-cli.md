@@ -1,8 +1,8 @@
 ## 対話式セットアップ CLI（folio-agent-init）の追加
 id: 10
 branch-slug: feat/init-wizard-cli
-github_issue:
-status: open
+github_issue: 20
+status: close
 type: feat
 対象: packages/handler/package.json, packages/handler/src/init/cli.ts (新規), packages/handler/src/init/questions.ts (新規), packages/handler/src/init/writers.ts (新規), packages/handler/src/ingest/types.ts, 対応するテストファイル (新規)
 内容: `npx folio-agent-init` で対話ウィザードを起動し、config・テーマCSS・APIルート雛形・build スクリプト・.dev.vars を自動生成する。利用者の手作業はレイアウトへの5行スニペット貼り付け（初回のみ）に圧縮する。Issue 08（プレイグラウンド）を supersede する。
