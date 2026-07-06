@@ -11,6 +11,13 @@ export interface IngestConfig {
   knowledgeDir?: string;
   /** Zenn CLI articles/ ingestion. Omit to skip Zenn articles entirely. */
   zenn?: ZennIngestConfig;
+  /**
+   * Path to a snapshot JSON produced by `folio-agent-sync-zenn`. Used as a
+   * fallback source of Zenn pages in environments where `zenn.articlesDir`
+   * cannot be read (e.g. CI, where the articles directory often comes from a
+   * separate/private repo that isn't checked out).
+   */
+  zennSnapshotPath?: string;
   /** Token threshold above which the CLI warns that CAG may no longer fit. */
   tokenWarningThreshold?: number;
   /** UI language captured by `folio-agent-init`. Ignored by ingest itself. */
