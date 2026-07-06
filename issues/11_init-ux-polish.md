@@ -1,8 +1,8 @@
 ## folio-agent-init の UX 改善（初回 dogfooding のフィードバック）
 id: 11
 branch-slug: fix/init-ux-polish
-github_issue:
-status: open
+github_issue: 22
+status: close
 type: fix
 対象: packages/handler/src/init/cli.ts, packages/handler/src/init/questions.ts, packages/handler/src/init/writers.ts, 対応するテストファイル
 内容: 実サイトでの初回 dogfooding で見つかった6点を修正する。秘密情報の gitignore 保証、theme.css の配信されない生成先、スニペット案内の文言とコピー性、Zenn baseUrl のバリデーション、既存導入サイトでの不要な雛形生成。
