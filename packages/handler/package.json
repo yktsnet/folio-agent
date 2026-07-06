@@ -11,7 +11,8 @@
     "migrations"
   ],
   "bin": {
-    "folio-agent-ingest": "dist/ingest/cli.js"
+    "folio-agent-ingest": "dist/ingest/cli.js",
+    "folio-agent-init": "dist/init/cli.js"
   },
   "repository": {
     "type": "git",
@@ -37,6 +38,7 @@
     "prepublishOnly": "tsc -b --force"
   },
   "dependencies": {
+    "@clack/prompts": "^1.7.0",
     "@google/genai": "^2.10.0",
     "@langchain/langgraph": "^1.4.7",
     "node-html-parser": "^8.0.4",
