@@ -9,7 +9,10 @@
 ```bash
 npm install @folio-agent/handler
 
-# ビルド時: 知識ファイルの生成
+# 対話ウィザードで初期設定（config・テーマCSS・APIルート雛形などを生成）
+npx folio-agent-init
+
+# ビルド時: 知識ファイルの生成（ウィザードが build スクリプトに追記する）
 npx folio-agent-ingest folio-agent.config.json knowledge.json
 ```
 
@@ -27,5 +30,7 @@ export default {
     })(request),
 };
 ```
+
+`createChatHandler` / `createGeminiGenerator` の両方に `language: "en"` を渡すと、定型文・ルーティングキーワード・システムプロンプトが英語になる（既定は `ja`）。
 
 D1 スキーマは `migrations/0001_init.sql` を `wrangler d1 migrations apply` で適用する。

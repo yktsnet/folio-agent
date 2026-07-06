@@ -17,22 +17,22 @@
 
 ```bash
 npm install @folio-agent/widget @folio-agent/handler
-
-# 知識ファイルの生成（ビルドのたびに実行）
-npx folio-agent-ingest folio-agent.config.json knowledge.json
+npx folio-agent-init
 ```
 
-```jsonc
-// folio-agent.config.json
-{
-  "distDir": "dist",
-  "include": ["/", "/works/**", "/about"],
-  "exclude": ["/works/draft-*"],
-  "knowledgeDir": "knowledge"
-}
-```
+`folio-agent-init` は対話ウィザード。言語（JA/EN）・知識に含める URL グロブ・Zenn 連携・Contact URL・テーマ3色・Gemini API キーを質問し、以下を生成・修正する:
 
-Pages Function 側（`functions/api/chat.ts` 等）で `createChatHandler` を組み立て、フロントに `<folio-agent-widget>` を1行埋め込む。詳細は [Usage](#usage--api) を参照。
+- `folio-agent.config.json`（ingest 設定 + ウィザードの回答）
+- `folio-agent.theme.css`（テーマ3色の CSS カスタムプロパティ）
+- API ルートの雛形（既定 `functions/api/chat.ts`。既存ファイルには触らない）
+- `package.json` の `build` スクリプトへの `folio-agent-ingest` 追記
+- `.dev.vars` の `GEMINI_API_KEY`
+
+手作業は1箇所だけ。完了時に表示されるスニペット（widget タグ + `folio-agent.theme.css` の読み込み）を、サイトのレイアウトへ初回のみ貼り付ける。
+
+テーマの微調整は `folio-agent.theme.css` の編集か `npx folio-agent-init` の再実行で行い、自サイトの dev サーバーにそのまま反映される。再実行は全質問を現在値デフォルトで聞き直し、書き込み前に変更内容を確認できる。
+
+ウィザードを使わず手で設定する場合は [Usage](#usage--api) を参照。
 
 ## Overview
 
@@ -83,7 +83,17 @@ flowchart LR
 npx folio-agent-ingest folio-agent.config.json knowledge.json
 ```
 
-`IngestConfig`（`distDir` / `include` / `exclude` / `knowledgeDir` / `zenn` / `tokenWarningThreshold`）は `@folio-agent/handler` から型で公開されている。`knowledgeDir` に置いた Markdown は URL パスをミラーした構造で、include/exclude の対象外（明示配置したものだけが入る）。
+```jsonc
+// folio-agent.config.json
+{
+  "distDir": "dist",
+  "include": ["/", "/works/**", "/about"],
+  "exclude": ["/works/draft-*"],
+  "knowledgeDir": "knowledge"
+}
+```
+
+`IngestConfig`（`distDir` / `include` / `exclude` / `knowledgeDir` / `zenn` / `tokenWarningThreshold`）は `@folio-agent/handler` から型で公開されている。`language` と `theme` は `folio-agent-init` がウィザードの回答を保持するためのフィールドで、ingest 自体は読まない。`knowledgeDir` に置いた Markdown は URL パスをミラーした構造で、include/exclude の対象外（明示配置したものだけが入る）。
 
 Zenn 記事も知識に含める場合は `zenn` を指定する（省略すればスキップ）。zenn.dev への通信は行わず、Zenn CLI の `articles/` ディレクトリをローカルで読み、frontmatter が `published: true` の記事だけを取り込む:
 
@@ -125,6 +135,8 @@ export default {
 
 `contactUrl` を渡すと、依頼・相談（inquiry）経路の回答が具体的な URL で Contact ページを案内する。省略した場合は URL なしで「Contactページ」とだけ案内する。
 
+`language`（`"ja" | "en"`、既定 `ja`）は `createChatHandler`（上限通知の定型文・ルーティングキーワード）と `createGeminiGenerator`（システムプロンプト）の両方に渡す。片方だけ渡すと定型文とプロンプトの言語がずれる。
+
 D1 スキーマは `packages/handler/migrations/0001_init.sql` を `wrangler d1 migrations apply` で適用する。`chat_logs` テーブル1つがログとレート制限カウンタ（10分3問・日次10回、`rateLimitConfig` で変更可）を兼ねる。
 
 ### 3. Widget (frontend)
@@ -137,6 +149,7 @@ D1 スキーマは `packages/handler/migrations/0001_init.sql` を `wrangler d1 
 </script>
 ```
 
+- `lang="en"` を付けると UI 文言（プレースホルダ・送信ボタン・開示文・エラー文）が英語になる。未指定は日本語。
 - `policy-href` の指し先ページには、①IPベースのレート制限（10分3問・日次10回）を行っていること、②入力内容と応答を D1 にログとして記録していること、③生成に使う Gemini API の無料枠は入力が学習に利用され得ることの3点を書く。ページ自体は導入サイト側の責務（folio-agent はテンプレートを同梱しない）。
 - 配色・フォントは CSS カスタムプロパティ6トークン（`--folio-agent-surface` / `text` / `muted` / `accent` / `accent-contrast` / `font`）で上書きできる。**未指定でもホストの配色（`color` / `color-scheme` 継承とCSSシステムカラー）から既定値を導出するため、サイトのライト/ダークどちらにも自然に馴染む**。変えたい場合のみ、上記トークンを上書きする。
 
@@ -165,7 +178,7 @@ D1 スキーマは `packages/handler/migrations/0001_init.sql` を `wrangler d1 
 **対応しない**
 
 - 静的ビルドを持たないサイト・Cloudflare以外のホスト（v1では非対応。将来の配送方式追加は [Design Decisions](#design-decisions) に境界のみ記載）
-- 認証・認可、会話の永続セッション、多言語対応
+- 認証・認可、会話の永続セッション、ja / en 以外の言語
 - 知識に書かれていないことへの回答（無回答 + Contact誘導が既定の振る舞い）
 
 ## Development
