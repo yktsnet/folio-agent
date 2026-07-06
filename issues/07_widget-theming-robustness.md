@@ -1,8 +1,8 @@
 ## widgetのテーマ変数対応と視認性の堅牢化
 id: 07
 branch-slug: feat/widget-theming-robustness
-github_issue:
-status: open
+github_issue: 16
+status: close
 type: feat
 対象: packages/widget/src/styles.ts
 内容: 吹き出し背景のブレンド元をシステムカラー固定からカスタムプロパティ（--folio-agent-*）優先に変更し、ホスト側のcolor-schemeとズレがあっても文字が視認できるようにする。
