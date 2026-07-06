@@ -40,12 +40,18 @@ describe("WIDGET_STYLES", () => {
     expect(WIDGET_STYLES).toContain("var(--folio-agent-text, CanvasText)");
   });
 
-  it("derives bubble background/border via color-mix instead of the muted token", () => {
+  it("derives bubble background/border via color-mix, prioritizing the theme tokens over the muted token", () => {
     const assistantBlock = WIDGET_STYLES.match(/\.message\.assistant\s*{[^}]*}/)?.[0] ?? "";
     const userBlock = WIDGET_STYLES.match(/\.message\.user\s*{[^}]*}/)?.[0] ?? "";
 
-    expect(assistantBlock).toContain("color-mix(in srgb, CanvasText");
-    expect(userBlock).toContain("color-mix(in srgb, CanvasText");
+    expect(assistantBlock).toContain(
+      "color-mix(in srgb, var(--folio-agent-text, CanvasText)",
+    );
+    expect(assistantBlock).toContain("var(--folio-agent-surface, Canvas))");
+    expect(userBlock).toContain(
+      "color-mix(in srgb, var(--folio-agent-text, CanvasText)",
+    );
+    expect(userBlock).toContain("var(--folio-agent-surface, Canvas))");
     expect(assistantBlock).not.toContain("--folio-agent-muted");
     expect(userBlock).not.toContain("--folio-agent-accent");
   });

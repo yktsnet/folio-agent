@@ -58,15 +58,15 @@ export const WIDGET_STYLES = `
   }
   .message.assistant {
     align-self: flex-start;
-    background: color-mix(in srgb, CanvasText 8%, Canvas);
-    border: 1px solid color-mix(in srgb, CanvasText 16%, Canvas);
+    background: color-mix(in srgb, var(--folio-agent-text, CanvasText) 8%, var(--folio-agent-surface, Canvas));
+    border: 1px solid color-mix(in srgb, var(--folio-agent-text, CanvasText) 16%, var(--folio-agent-surface, Canvas));
     border-radius: 8px;
     padding: 10px 14px;
   }
   .message.user {
     align-self: flex-end;
-    background: color-mix(in srgb, CanvasText 14%, Canvas);
-    border: 1px solid color-mix(in srgb, CanvasText 24%, Canvas);
+    background: color-mix(in srgb, var(--folio-agent-text, CanvasText) 14%, var(--folio-agent-surface, Canvas));
+    border: 1px solid color-mix(in srgb, var(--folio-agent-text, CanvasText) 24%, var(--folio-agent-surface, Canvas));
     border-radius: 8px;
     padding: 10px 14px;
   }
