@@ -12,15 +12,18 @@ export interface WizardAnswers {
   theme: ThemeColors;
   /** Non-empty only when the visitor typed a new key this run; blank means "leave .dev.vars untouched". */
   geminiApiKey?: string;
-  apiRoutePath: string;
+  /** `undefined` means "don't generate the API route scaffold" (site already wires the handler elsewhere). */
+  apiRoutePath?: string;
 }
+
+const DEFAULT_API_ROUTE_PATH = "functions/api/chat.ts";
 
 export const DEFAULT_WIZARD_ANSWERS: WizardAnswers = {
   language: DEFAULT_LANGUAGE,
   distDir: "dist",
   include: ["/**"],
   theme: { accent: "#2563eb", surface: "#ffffff", text: "#111827" },
-  apiRoutePath: "functions/api/chat.ts",
+  apiRoutePath: DEFAULT_API_ROUTE_PATH,
 };
 
 const HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -38,6 +41,24 @@ export function parseIncludeList(value: string): string[] {
     .filter((item) => item.length > 0);
 }
 
+/**
+ * Normalizes a Zenn `baseUrl` answer. A bare username (no `http(s)://` prefix) is expanded to the
+ * canonical Zenn articles URL; an already-fully-qualified URL passes through unchanged.
+ */
+export function normalizeZennBaseUrl(input: string): string {
+  const trimmed = input.trim();
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://zenn.dev/${trimmed}/articles`;
+}
+
+/**
+ * Default answer for the "API route scaffold output path" question: the scaffold path for a
+ * fresh setup (no previous config), or `undefined` ("don't generate") when re-running against an
+ * existing config, since the site likely already wires the handler up some other way.
+ */
+export function defaultApiRoutePath(hasPreviousConfig: boolean): string | undefined {
+  return hasPreviousConfig ? undefined : DEFAULT_API_ROUTE_PATH;
+}
+
 interface WizardText {
   distDirMessage: string;
   includeMessage: string;
@@ -45,6 +66,7 @@ interface WizardText {
   zennConfirmMessage: string;
   zennArticlesDirMessage: string;
   zennBaseUrlMessage: string;
+  zennBaseUrlNormalizedNote: (baseUrl: string) => string;
   contactUrlMessage: string;
   contactUrlPlaceholder: string;
   accentMessage: string;
@@ -54,6 +76,7 @@ interface WizardText {
   geminiApiKeyMessage: string;
   geminiApiKeySkipNote: string;
   apiRoutePathMessage: string;
+  apiRoutePathPlaceholder: string;
   cancelledMessage: string;
 }
 
@@ -64,7 +87,8 @@ const WIZARD_TEXT: Record<Language, WizardText> = {
     includePlaceholder: "/**",
     zennConfirmMessage: "Zenn 記事も知識に含めますか？",
     zennArticlesDirMessage: "Zenn CLI の articles/ ディレクトリへのパス",
-    zennBaseUrlMessage: "記事の公開 URL のベース（例: https://zenn.dev/<username>/articles）",
+    zennBaseUrlMessage: "記事の公開 URL のベース（例: https://zenn.dev/<username>/articles、またはユーザー名のみでも可）",
+    zennBaseUrlNormalizedNote: (baseUrl) => `✅ ${baseUrl} として登録します。`,
     contactUrlMessage: "Contact ページの URL（任意。空 Enter でスキップ）",
     contactUrlPlaceholder: "https://example.com/contact",
     accentMessage: "テーマカラー: accent（#付き hex）",
@@ -73,7 +97,8 @@ const WIZARD_TEXT: Record<Language, WizardText> = {
     colorValidationError: "#fff や #ffffff のような hex カラーコードで入力してください。",
     geminiApiKeyMessage: "Gemini API キー（任意。空 Enter でスキップ）",
     geminiApiKeySkipNote: "スキップしました。キーは https://aistudio.google.com/apikey から取得できます。",
-    apiRoutePathMessage: "API ルート雛形の出力先",
+    apiRoutePathMessage: "API ルート雛形の出力先（空 Enter で生成しない。既に別の経路で配線済みのサイト向け）",
+    apiRoutePathPlaceholder: "functions/api/chat.ts",
     cancelledMessage: "セットアップを中止しました。",
   },
   en: {
@@ -82,7 +107,8 @@ const WIZARD_TEXT: Record<Language, WizardText> = {
     includePlaceholder: "/**",
     zennConfirmMessage: "Include Zenn articles in the knowledge too?",
     zennArticlesDirMessage: "Path to the Zenn CLI articles/ directory",
-    zennBaseUrlMessage: "Base URL for published articles (e.g. https://zenn.dev/<username>/articles)",
+    zennBaseUrlMessage: "Base URL for published articles (e.g. https://zenn.dev/<username>/articles, or just your username)",
+    zennBaseUrlNormalizedNote: (baseUrl) => `✅ Registering as ${baseUrl}.`,
     contactUrlMessage: "Contact page URL (optional, press Enter to skip)",
     contactUrlPlaceholder: "https://example.com/contact",
     accentMessage: "Theme color: accent (hex with #)",
@@ -91,7 +117,8 @@ const WIZARD_TEXT: Record<Language, WizardText> = {
     colorValidationError: "Enter a hex color code like #fff or #ffffff.",
     geminiApiKeyMessage: "Gemini API key (optional, press Enter to skip)",
     geminiApiKeySkipNote: "Skipped. Get a key at https://aistudio.google.com/apikey",
-    apiRoutePathMessage: "Output path for the API route scaffold",
+    apiRoutePathMessage: "Output path for the API route scaffold (blank to skip generating it, e.g. if already wired up elsewhere)",
+    apiRoutePathPlaceholder: "functions/api/chat.ts",
     cancelledMessage: "Setup cancelled.",
   },
 };
@@ -150,13 +177,17 @@ export async function runWizard(defaults: WizardAnswers): Promise<WizardAnswers>
       }),
       text.cancelledMessage,
     );
-    const baseUrl = unwrap(
+    const baseUrlInput = unwrap(
       await clack.text({
         message: text.zennBaseUrlMessage,
         initialValue: defaults.zenn?.baseUrl ?? "",
       }),
       text.cancelledMessage,
     );
+    const baseUrl = normalizeZennBaseUrl(baseUrlInput);
+    if (baseUrl !== baseUrlInput.trim()) {
+      clack.note(text.zennBaseUrlNormalizedNote(baseUrl));
+    }
     zenn = { articlesDir, baseUrl };
   }
 
@@ -195,10 +226,15 @@ export async function runWizard(defaults: WizardAnswers): Promise<WizardAnswers>
     clack.note(text.geminiApiKeySkipNote);
   }
 
-  const apiRoutePath = unwrap(
-    await clack.text({ message: text.apiRoutePathMessage, initialValue: defaults.apiRoutePath }),
+  const apiRoutePathInput = unwrap(
+    await clack.text({
+      message: text.apiRoutePathMessage,
+      placeholder: text.apiRoutePathPlaceholder,
+      initialValue: defaults.apiRoutePath ?? "",
+    }),
     text.cancelledMessage,
   );
+  const apiRoutePath = apiRoutePathInput.trim().length > 0 ? apiRoutePathInput.trim() : undefined;
 
   return {
     language,
