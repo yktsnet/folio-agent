@@ -8,6 +8,7 @@ type: feat
 - packages/handler/src/chat/types.ts（`RateLimitConfig`型・`DEFAULT_RATE_LIMIT_CONFIG`・`RateLimitReason`を変更）
 - packages/handler/src/chat/rate-limit.ts（日次固定窓のハードコードを可変窓に一般化）
 - packages/handler/src/chat/graph.ts（`OVER_LIMIT_MESSAGE`に実際にヒットした制限の具体的数値を埋め込む）
+- packages/handler/src/chat/handler.ts（`buildChatGraph`呼び出しに`rateLimitConfig: config.rateLimitConfig ?? DEFAULT_RATE_LIMIT_CONFIG`を渡す。仕様3節で要求済みだが対象リストへの記載が漏れていた）
 - packages/handler/test/chat/rate-limit.test.ts（新設定値・新reasonに追従）
 - packages/handler/test/chat/graph.test.ts（新メッセージ文言のアサーションに追従）
 - docs/design-decisions.md（「レート制限をD1ログの集計で行う理由」の記述を新挙動に合わせて更新）
