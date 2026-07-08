@@ -32,7 +32,7 @@ Astro/Next + Cloudflare/Vercelが主流の層に対し、npm install + wrangler 
 
 ## レート制限を D1 ログの集計で行う理由
 
-`chat_logs` のCOUNTをそのままカウンタに流用し、別の仕組みを持たない。Workers Rate Limiting bindingは日次上限が表現しづらく、Durable Objectsはこの規模に過剰。上限は事前に掲げず、超過時に「上限に達しました。お急ぎはContactへ」と返して誘導に転化する。NATやモバイル回線で複数人が同一IPになる限界は、数字を環境変数で即調整できる形で吸収する。
+`chat_logs` のCOUNTをそのままカウンタに流用し、別の仕組みを持たない。Workers Rate Limiting bindingは長時間窓の上限が表現しづらく、Durable Objectsはこの規模に過剰。上限自体は事前に掲げないが、超過時は「何分/何時間あたり何件まで」という実際に達した制限の内容を具体的に伝え、納得感を優先してContactへ誘導する（無愛想な定型文で終わらせない）。NATやモバイル回線で複数人が同一IPになる限界は、数字をconfigで即調整できる形で吸収する。
 
 ## ウィジェットを自前で書く理由
 

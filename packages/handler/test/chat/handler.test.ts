@@ -46,7 +46,7 @@ describe("createChatHandler", () => {
     const handle = createChatHandler({
       db,
       generateAnswer: vi.fn().mockResolvedValue("ok"),
-      rateLimitConfig: { shortWindowMinutes: 10, shortWindowMax: 1, dailyMax: 10 },
+      rateLimitConfig: { shortWindowMinutes: 10, shortWindowMax: 1, longWindowHours: 12, longWindowMax: 10 },
     });
 
     const first = await handle(request({ message: "hi" }, { "CF-Connecting-IP": "9.9.9.9" }));

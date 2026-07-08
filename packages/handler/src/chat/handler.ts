@@ -15,10 +15,12 @@ export interface ChatHandlerConfig {
 }
 
 export function createChatHandler(config: ChatHandlerConfig): (request: Request) => Promise<Response> {
+  const rateLimitConfig = config.rateLimitConfig ?? DEFAULT_RATE_LIMIT_CONFIG;
   const graph = buildChatGraph({
-    checkRateLimit: (ip) => checkRateLimit(config.db, ip, new Date(), config.rateLimitConfig ?? DEFAULT_RATE_LIMIT_CONFIG),
+    checkRateLimit: (ip) => checkRateLimit(config.db, ip, new Date(), rateLimitConfig),
     generateAnswer: config.generateAnswer,
     logChat: (entry) => logChat(config.db, entry),
+    rateLimitConfig,
     language: config.language,
   });
 
