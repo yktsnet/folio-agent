@@ -1,8 +1,8 @@
 ## レート制限の緩和と、制限ヒット時の納得感あるメッセージ化
 id: 15
 branch-slug: rate-limit-tuning-and-honest-messaging
-github_issue:
-status: open
+github_issue: 28
+status: close
 type: feat
 対象:
 - packages/handler/src/chat/types.ts（`RateLimitConfig`型・`DEFAULT_RATE_LIMIT_CONFIG`・`RateLimitReason`を変更）
