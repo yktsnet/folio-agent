@@ -3,6 +3,8 @@
 # folio-agent
 
 [![CI](https://github.com/yktsnet/folio-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/yktsnet/folio-agent/actions/workflows/ci.yml)
+[![npm version (widget)](https://img.shields.io/npm/v/@folio-agent/widget.svg)](https://www.npmjs.com/package/@folio-agent/widget)
+[![npm version (handler)](https://img.shields.io/npm/v/@folio-agent/handler.svg)](https://www.npmjs.com/package/@folio-agent/handler)
 
 静的サイト + Cloudflare Workers 向けに、知識全量をビルド時にシステムプロンプトへ同梱する **CAG（検索を持たないfull-context）方式**で答えるポートフォリオ受付チャットボットを提供する npm パッケージ。
 

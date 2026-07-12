@@ -3,6 +3,8 @@
 # folio-agent
 
 [![CI](https://github.com/yktsnet/folio-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/yktsnet/folio-agent/actions/workflows/ci.yml)
+[![npm version (widget)](https://img.shields.io/npm/v/@folio-agent/widget.svg)](https://www.npmjs.com/package/@folio-agent/widget)
+[![npm version (handler)](https://img.shields.io/npm/v/@folio-agent/handler.svg)](https://www.npmjs.com/package/@folio-agent/handler)
 
 An npm package that provides a portfolio reception chatbot for static sites + Cloudflare Workers, answering with a **CAG (search-free full-context) approach** that bundles the entire knowledge base into the system prompt at build time.
 
