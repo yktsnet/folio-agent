@@ -1,8 +1,8 @@
 ## 保証台帳の欠落埋め（レート制限周りの小粒欠落 + ingest/init CLIのE2E）
 id: 18
 branch-slug: guarantees-gap-tests
-github_issue:
-status: open
+github_issue: 30
+status: close
 type: feat
 対象:
 - packages/handler/test/chat/handler.test.ts（欠落テスト2件追加）
