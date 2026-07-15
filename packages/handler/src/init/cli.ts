@@ -164,7 +164,7 @@ function seedDefaults(previous: IngestConfig | undefined): WizardAnswers {
   };
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const previousConfig = await readJson<IngestConfig>(CONFIG_PATH);
   const answers = await runWizard(seedDefaults(previousConfig));
   const text = CLI_TEXT[answers.language];
