@@ -41,6 +41,26 @@ describe("createChatHandler", () => {
     expect(response.status).toBe(400);
   });
 
+  it("rejects a message over 1000 characters with 400", async () => {
+    const handle = createChatHandler({ db: createFakeD1(), generateAnswer: vi.fn() });
+
+    const response = await handle(request({ message: "a".repeat(1001) }));
+
+    expect(response.status).toBe(400);
+  });
+
+  it("treats a request without CF-Connecting-IP as ip \"unknown\" without throwing", async () => {
+    const handle = createChatHandler({
+      db: createFakeD1(),
+      generateAnswer: vi.fn().mockResolvedValue("hello there"),
+    });
+
+    const response = await handle(request({ message: "Worksについて教えて" }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ answer: "hello there", route: "works" });
+  });
+
   it("enforces the rate limit across requests from the same IP", async () => {
     const db = createFakeD1();
     const handle = createChatHandler({

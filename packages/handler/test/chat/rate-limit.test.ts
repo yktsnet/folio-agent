@@ -1,9 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { checkRateLimit } from "../../src/chat/rate-limit.js";
 import { logChat } from "../../src/chat/log.js";
+import { DEFAULT_RATE_LIMIT_CONFIG } from "../../src/chat/types.js";
 import { createFakeD1 } from "./fake-d1.js";
 
 const CONFIG = { shortWindowMinutes: 10, shortWindowMax: 6, longWindowHours: 12, longWindowMax: 12 };
+
+describe("DEFAULT_RATE_LIMIT_CONFIG", () => {
+  it("has the current declared rate limit values", () => {
+    expect(DEFAULT_RATE_LIMIT_CONFIG).toEqual({
+      shortWindowMinutes: 10,
+      shortWindowMax: 6,
+      longWindowHours: 12,
+      longWindowMax: 12,
+    });
+  });
+});
 
 describe("checkRateLimit", () => {
   it("allows requests under both limits", async () => {

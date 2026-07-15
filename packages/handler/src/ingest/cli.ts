@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import { readFile, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { generateKnowledge } from "./generate.js";
 import type { IngestConfig } from "./types.js";
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const configPath = process.argv[2];
   const outputPath = process.argv[3];
 
@@ -24,7 +25,10 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+// Only run when executed directly (e.g. `folio-agent-ingest ...`), not when imported by tests.
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
