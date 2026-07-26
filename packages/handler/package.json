@@ -40,14 +40,14 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@google/genai": "^2.11.0",
-    "@langchain/langgraph": "^1.4.7",
+    "@google/genai": "^2.12.0",
+    "@langchain/langgraph": "^1.4.8",
     "node-html-parser": "^9.0.0",
     "picomatch": "^4.0.5"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260712.1",
+    "@cloudflare/workers-types": "^5.20260719.1",
     "@types/picomatch": "^4.0.2",
-    "wrangler": "^4.110.0"
+    "wrangler": "^4.112.0"
   }
 }
