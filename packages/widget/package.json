@@ -32,6 +32,6 @@
     "prepublishOnly": "tsc -b --force"
   },
   "devDependencies": {
-    "happy-dom": "^20.11.0"
+    "happy-dom": "^20.11.1"
   }
 }
