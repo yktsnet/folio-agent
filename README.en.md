@@ -48,11 +48,11 @@ It's developed as an npm package independent of any particular site, and is grow
 
 **Build time**: `folio-agent-ingest` globs over the consumer site's `dist/` and `knowledge/` (plus Zenn articles, optionally), converts HTML to text, counts tokens, and writes `knowledge.json`.
 
-**Runtime (Cloudflare Workers)**: `knowledge.json` ships as a build artifact in the same deployment as the site, and `createChatHandler` processes each request through the four nodes of a LangGraph StateGraph. Requests that hit the rate limit never reach generation — they are logged and returned.
+**Runtime (Cloudflare Workers)**: `knowledge.json` ships as a build artifact in the same deployment as the site. The `folio-agent-widget` web component (Shadow DOM) posts to `/api/chat`, and `createChatHandler` processes each request through the four nodes of a LangGraph StateGraph. Requests that hit the rate limit never reach generation — they are logged and returned.
 
 ```mermaid
 flowchart TD
-    Widget(["&lt;folio-agent-widget&gt;<br/>Shadow DOM"]) -->|"POST /api/chat"| Guard{"input_guard<br/>rate limit via D1"}
+    Guard{"input_guard<br/>rate limit via D1"}
     Guard -->|"within limit"| Route["route_message<br/>keyword classification"]
     Guard -->|"exceeded"| Log["log"]
     Route --> Generate{{"generate<br/>Gemini + knowledge.json"}}

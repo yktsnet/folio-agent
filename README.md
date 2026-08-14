@@ -48,11 +48,11 @@ npx folio-agent-init
 
 **ビルド時**: `folio-agent-ingest` が利用者サイトの `dist/` と `knowledge/`（任意で Zenn 記事）から glob で対象を選び、HTML をテキスト化・トークン数を計測して `knowledge.json` に書き出す。
 
-**実行時（Cloudflare Workers）**: `knowledge.json` はビルド成果物としてサイトと同一デプロイに同梱され、`createChatHandler` が LangGraph StateGraph の4ノードで処理する。レート制限に掛かったリクエストは生成に進まず、ログだけ残して返る。
+**実行時（Cloudflare Workers）**: `knowledge.json` はビルド成果物としてサイトと同一デプロイに同梱される。Web Component の `folio-agent-widget` が `POST /api/chat` を叩き、`createChatHandler` が LangGraph StateGraph の4ノードで処理する。レート制限に掛かったリクエストは生成に進まず、ログだけ残して返る。
 
 ```mermaid
 flowchart TD
-    Widget(["&lt;folio-agent-widget&gt;"]) -->|"POST /api/chat"| Guard{"input_guard<br/>D1 でレート制限判定"}
+    Guard{"input_guard<br/>D1 でレート制限判定"}
     Guard -->|"制限内"| Route["route_message<br/>キーワード分類"]
     Guard -->|"超過"| Log["log"]
     Route --> Generate{{"generate<br/>Gemini + knowledge.json"}}
