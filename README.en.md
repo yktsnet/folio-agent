@@ -46,25 +46,18 @@ It's developed as an npm package independent of any particular site, and is grow
 
 ## Architecture
 
+**Build time**: `folio-agent-ingest` globs over the consumer site's `dist/` and `knowledge/` (plus Zenn articles, optionally), converts HTML to text, counts tokens, and writes `knowledge.json`.
+
+**Runtime (Cloudflare Workers)**: `knowledge.json` ships as a build artifact in the same deployment as the site, and `createChatHandler` processes each request through the four nodes of a LangGraph StateGraph. Requests that hit the rate limit never reach generation — they are logged and returned.
+
 ```mermaid
-flowchart LR
-    subgraph Build["Build time"]
-        Dist["Consumer site's dist/ + knowledge/\n(+ Zenn articles, optional)"] --> CLI["folio-agent-ingest\n(glob select → HTML→text → token count)"]
-        CLI --> KnowledgeJson["knowledge.json"]
-    end
-
-    subgraph Runtime["Runtime (Cloudflare Workers)"]
-        Widget["&lt;folio-agent-widget&gt;\n(Shadow DOM)"] -->|"POST /api/chat"| Handler["createChatHandler"]
-        Handler --> Graph["LangGraph StateGraph"]
-        Graph --> Guard["input_guard\n(rate limit check via D1)"]
-        Guard -->|"within limit"| Route["route_message\n(keyword classification)"]
-        Guard -->|"exceeded"| Log["log"]
-        Route --> Generate["generate\n(Gemini + knowledge.json)"]
-        Generate --> Log
-        Log --> D1[("D1: chat_logs")]
-    end
-
-    KnowledgeJson -.->|"bundled into build output"| Generate
+flowchart TD
+    Widget(["&lt;folio-agent-widget&gt;<br/>Shadow DOM"]) -->|"POST /api/chat"| Guard{"input_guard<br/>rate limit via D1"}
+    Guard -->|"within limit"| Route["route_message<br/>keyword classification"]
+    Guard -->|"exceeded"| Log["log"]
+    Route --> Generate{{"generate<br/>Gemini + knowledge.json"}}
+    Generate --> Log
+    Log --> D1[("D1: chat_logs")]
 ```
 
 ## Tech Stack
