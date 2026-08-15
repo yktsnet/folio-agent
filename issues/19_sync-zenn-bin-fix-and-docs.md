@@ -1,8 +1,8 @@
 ## folio-agent-sync-zenn が bin 経由で無言終了する不具合の修正とスナップショット機能の文書化
 id: 19
 branch-slug: sync-zenn-bin-fix-and-docs
-github_issue:
-status: open
+github_issue: 39
+status: close
 type: fix
 対象: `packages/handler/src/sync/cli.ts` / `packages/handler/test/sync/cli.test.ts` / `docs/guarantees.md` / `docs/usage.md` / `README.md` / `README.en.md`
 内容: `folio-agent-sync-zenn` を npm が張る `node_modules/.bin/` 経由で実行すると、直接実行判定が一致せず `main()` が走らないまま exit code 0 で終了する。`ingest/cli.ts` と同じ判定式に揃えて修正する。あわせて 0.4.0 で追加された `zennSnapshotPath` フォールバックと `folio-agent-sync-zenn` が利用者向けドキュメントに一切記載されていないため、`docs/usage.md` と README 2本に追記する。
