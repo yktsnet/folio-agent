@@ -138,11 +138,13 @@
 
 - config.zennから公開済みZenn記事のみをKnowledgePage[]としてJSON出力する
 - config.zenn未設定時は例外を投げる
+- npmがnode_modules/.bin/に張るシンボリックリンク経由で実行された場合もmain()を実行し、スナップショットを書き出す
 
 | 保証（要約） | 対応テスト |
 |---|---|
 | 公開済み記事のみをJSON出力 | `writes only published articles to the output JSON as KnowledgePage[]` |
 | zenn未設定時の例外 | `throws when config.zenn is not set` |
+| binシンボリックリンク経由でのmain()実行 | `describe("folio-agent-sync-zenn CLI (bin symlink execution)")` > `runs main() and writes the output file when invoked via a bin-style symlink` |
 
 ### 11. `packages/handler/test/init/cli.test.ts` — packages/handler/src/init/cli.ts (folio-agent-init CLI, main)
 

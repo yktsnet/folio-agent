@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { scanZennArticles } from "../ingest/zenn.js";
 import type { IngestConfig, KnowledgePage } from "../ingest/types.js";
 
@@ -38,8 +40,12 @@ async function main(): Promise<void> {
 }
 
 // Only run when executed directly (e.g. `folio-agent-sync-zenn ...`), not
-// when imported by tests.
-if (import.meta.url === `file://${process.argv[1]}`) {
+// when imported by tests. Compares realpaths: npm's node_modules/.bin/
+// entries are symlinks, so process.argv[1] stays the symlink path while
+// import.meta.url is already the resolved target — a plain string/URL
+// comparison of the two (matching ingest/cli.ts as-is) never matches, and
+// main() silently never runs when invoked via the published bin name.
+if (process.argv[1] && fileURLToPath(import.meta.url) === realpathSync(process.argv[1])) {
   main().catch((error: unknown) => {
     console.error(error);
     process.exitCode = 1;
