@@ -32,6 +32,27 @@ Zenn 記事も知識に含める場合は `zenn` を指定する（省略すれ�
 }
 ```
 
+CI 等で `articlesDir` に到達できない環境（private リポの記事を読めない等）向けに、`zenn` の兄弟キーとして `zennSnapshotPath` を指定できる。`articlesDir` が存在しない場合、ingest はこのパスの JSON にフォールバックする:
+
+```jsonc
+// folio-agent.config.json（抜粋）
+{
+  "zenn": {
+    "articlesDir": "../zenn-content/articles",
+    "baseUrl": "https://zenn.dev/<username>/articles"
+  },
+  "zennSnapshotPath": "zenn-snapshot.json"
+}
+```
+
+スナップショットは `folio-agent-sync-zenn` で生成し、リポにコミットして使う:
+
+```bash
+npx folio-agent-sync-zenn folio-agent.config.json zenn-snapshot.json
+```
+
+**フォールバック時に警告は出ない。** `articlesDir` も `zennSnapshotPath` も無い場合のみ warning が出る仕様のため、スナップショットが古いまま放置されてもビルドは成功し続け、知識だけが古くなる。CI 等で定期的に `folio-agent-sync-zenn` を回すか、古さを検知する手段を利用者側で持つこと。
+
 ## 2. Chat Handler (Pages Function / Worker)
 
 ```ts

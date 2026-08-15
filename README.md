@@ -32,6 +32,8 @@ npx folio-agent-init
 - `package.json` の `build` スクリプトへの `folio-agent-ingest` 追記
 - `.dev.vars` の `GEMINI_API_KEY`
 
+CI 等で Zenn 記事ディレクトリ（`articlesDir`）に届かない場合は、`folio-agent-sync-zenn` で事前生成したスナップショットにフォールバックできる。詳細は [docs/usage.md](docs/usage.md) を参照。
+
 手作業は1箇所だけ。完了時に表示されるスニペット（widget タグ + `folio-agent.theme.css` の読み込み）を、サイトのレイアウトへ初回のみ貼り付ける。
 
 テーマの微調整は `folio-agent.theme.css` の編集か `npx folio-agent-init` の再実行で行い、自サイトの dev サーバーにそのまま反映される。再実行は全質問を現在値デフォルトで聞き直し、書き込み前に変更内容を確認できる。
@@ -46,7 +48,7 @@ npx folio-agent-init
 
 ## Architecture
 
-**ビルド時**: `folio-agent-ingest` が利用者サイトの `dist/` と `knowledge/`（任意で Zenn 記事）から glob で対象を選び、HTML をテキスト化・トークン数を計測して `knowledge.json` に書き出す。
+**ビルド時**: `folio-agent-ingest` が利用者サイトの `dist/` と `knowledge/`（任意で Zenn 記事、または `folio-agent-sync-zenn` が生成したスナップショット）から glob で対象を選び、HTML をテキスト化・トークン数を計測して `knowledge.json` に書き出す。
 
 **実行時（Cloudflare Workers）**: `knowledge.json` はビルド成果物としてサイトと同一デプロイに同梱される。Web Component の `folio-agent-widget` が `POST /api/chat` を叩き、`createChatHandler` が LangGraph StateGraph の4ノードで処理する。レート制限に掛かったリクエストは生成に進まず、ログだけ残して返る。
 
@@ -76,7 +78,7 @@ flowchart TD
 
 ウィザードを使わず手で設定する場合の手順と、config・handler・widget の API 詳細は [docs/usage.md](docs/usage.md) にある。概要だけ示す:
 
-1. **Knowledge Generation（ビルド時）**: `folio-agent-ingest` が `folio-agent.config.json` の URL グロブに従って `dist/` と `knowledge/`（+ Zenn 記事・任意）から knowledge.json を作る。
+1. **Knowledge Generation（ビルド時）**: `folio-agent-ingest` が `folio-agent.config.json` の URL グロブに従って `dist/` と `knowledge/`（+ Zenn 記事・任意。CI 等で記事ディレクトリに届かない場合は `folio-agent-sync-zenn` のスナップショットにフォールバック）から knowledge.json を作る。
 2. **Chat Handler（Pages Function / Worker）**: `createChatHandler` + `createGeminiGenerator` を数行で組み立てる。`contactUrl` で Contact 誘導、`language` で ja/en を切り替える。
 3. **Widget（フロント）**: `<folio-agent-widget>` を1行埋め込む。テーマは CSS カスタムプロパティ6トークン、UI 言語は `lang` 属性。
 
@@ -94,7 +96,7 @@ flowchart TD
 **対応する**
 
 - `dist/` を吐く静的サイト + Cloudflare Workers（Pages Functions）へのチャットボット組み込み
-- ビルド時の知識取り込み（URLグロブ選択 + 補足Markdown + Zenn記事）
+- ビルド時の知識取り込み（URLグロブ選択 + 補足Markdown + Zenn記事、またはそのスナップショット）
 - IPベースのレート制限とD1ログ
 
 **対応しない**
