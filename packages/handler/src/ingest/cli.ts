@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { generateKnowledge } from "./generate.js";
@@ -26,7 +27,10 @@ export async function main(): Promise<void> {
 }
 
 // Only run when executed directly (e.g. `folio-agent-ingest ...`), not when imported by tests.
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// Compares realpaths, not raw paths: npm's node_modules/.bin/ entries are symlinks, so
+// process.argv[1] stays the symlink path while import.meta.url is already the resolved target
+// (see sync/cli.ts for the fuller rationale).
+if (process.argv[1] && fileURLToPath(import.meta.url) === realpathSync(process.argv[1])) {
   main().catch((error: unknown) => {
     console.error(error);
     process.exitCode = 1;
