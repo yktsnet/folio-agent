@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, statSync } from "node:fs";
+import { existsSync, realpathSync, statSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -274,7 +274,10 @@ export async function main(): Promise<void> {
 
 // Only run the wizard when executed directly (the bin entry point); importing this module for
 // unit tests (e.g. `planDevVarsAndGitignore`) must not trigger the interactive CLI as a side effect.
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// Compares realpaths, not raw paths: npm's node_modules/.bin/ entries are symlinks, so
+// process.argv[1] stays the symlink path while import.meta.url is already the resolved target
+// (see sync/cli.ts for the fuller rationale).
+if (process.argv[1] && fileURLToPath(import.meta.url) === realpathSync(process.argv[1])) {
   main().catch((error: unknown) => {
     console.error(error);
     process.exitCode = 1;

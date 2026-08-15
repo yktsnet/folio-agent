@@ -1,4 +1,6 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,6 +8,10 @@ import * as clack from "@clack/prompts";
 import { buildApiRouteTemplate, buildThemeCss } from "../../src/init/writers.js";
 import type { IngestConfig } from "../../src/ingest/types.js";
 import { main, planDevVarsAndGitignore } from "../../src/init/cli.js";
+
+// The compiled bin entry point. Only present after `npm run build`; the
+// bin-symlink regression test below is skipped when it's missing.
+const distCliPath = join(import.meta.dirname, "../../dist/init/cli.js");
 
 vi.mock("@clack/prompts", () => ({
   intro: vi.fn(),
@@ -145,5 +151,37 @@ describe("planDevVarsAndGitignore", () => {
     const plan = planDevVarsAndGitignore("abc123", "OTHER=1\n", "node_modules\n.dev.vars\n");
     expect(plan.nextDevVars).toBe("OTHER=1\nGEMINI_API_KEY=abc123\n");
     expect(plan.gitignoreResult).toEqual({ content: "node_modules\n.dev.vars\n", changed: false });
+  });
+});
+
+describe.skipIf(!existsSync(distCliPath))("folio-agent-init CLI (bin symlink execution)", () => {
+  // Importing main (as the tests above do, with @clack/prompts mocked) can never catch a
+  // regression in the "am I being run directly?" guard, since import never triggers it. npm's
+  // node_modules/.bin/ entries are symlinks to the real file, so this spawns the compiled CLI
+  // through a symlink — mirroring how `folio-agent-init` actually gets invoked once installed.
+  //
+  // The wizard is interactive, so driving it to completion would require emulating its exact
+  // keystroke sequence — fragile and beside the point of this test. Instead, stdin is left as
+  // /dev/null (no TTY, immediate EOF): main() starts runWizard(), which prints its intro banner
+  // before blocking on the first prompt; once the event loop has nothing else to do, the process
+  // exits cleanly on its own. Observing the banner is enough to prove main() ran.
+  it("runs main() and starts the wizard when invoked via a bin-style symlink", async () => {
+    const root = await mkdtemp(join(tmpdir(), "folio-agent-init-cli-bin-"));
+    try {
+      const binDir = join(root, "bin");
+      await mkdir(binDir, { recursive: true });
+      const binPath = join(binDir, "folio-agent-init");
+      await symlink(distCliPath, binPath);
+
+      const result = execFileSync("node", [binPath], {
+        cwd: root,
+        encoding: "utf-8",
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+
+      expect(result).toContain("folio-agent-init");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
