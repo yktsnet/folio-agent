@@ -1,8 +1,8 @@
 ## ingest / init CLI の bin 判定を修正し、回帰テストを CI で実際に走らせる
 id: 20
 branch-slug: bin-guard-ingest-init
-github_issue:
-status: open
+github_issue: 40
+status: close
 type: fix
 対象: `packages/handler/src/ingest/cli.ts` / `packages/handler/src/init/cli.ts` / `packages/handler/test/ingest/cli.test.ts` / `packages/handler/test/init/cli.test.ts` / `.github/workflows/ci.yml` / `docs/guarantees.md`
 内容: Issue 19 で `sync/cli.ts` に施した bin シンボリックリンク対応が `ingest/cli.ts` と `init/cli.ts` に未適用で、両者は壊れた判定式のまま残っている。この判定は v0.4.0 の**後**に入ったため未リリースであり、次の publish で `folio-agent-ingest` / `folio-agent-init` が bin 経由で無言終了するようになる。判定式を揃え、symlink 回帰テストを両 CLI に追加する。あわせて CI が `npm test` を `npm run build` より前に実行しているため symlink 回帰テストが常にスキップされている問題を解消する。
