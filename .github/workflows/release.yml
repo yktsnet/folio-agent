@@ -30,8 +30,9 @@ jobs:
 
       - run: npm ci
       - run: npm run typecheck
-      - run: npm test
+      # bin symlink の回帰テストはビルド成果物を spawn するため、test より先に build する
       - run: npm run build
+      - run: npm test
 
       - name: Publish (Trusted Publishing / OIDC, npm >= 11.5.1 required)
         run: npm publish --provenance -w @folio-agent/handler -w @folio-agent/widget
