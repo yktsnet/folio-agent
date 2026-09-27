@@ -72,7 +72,7 @@ Only the key points. The full text, including what was rejected and when to revi
 - **No search**: CAG is enough while the knowledge is small. The boundary for switching to RAG is known; this sits on the near side of it
 - **Narrow target**: only static sites that build to `dist/` + Cloudflare Workers. Generalizing waits until users need it
 - **Gemini free tier by default**: visitors are told on the disclosure page that input may be used for training
-- **One D1 table for logs**: no consent button; a line below the input plus a link to a details page tells visitors. The rate limit counts the same log rows
+- **One D1 table for conversation logs**: no consent button; a line below the input plus a link to a details page tells visitors. The rate limit counts the same log rows
 
 ## Scope
 

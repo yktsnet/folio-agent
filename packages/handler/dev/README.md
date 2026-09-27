@@ -7,8 +7,8 @@
 # ウィジェットのビルド成果物を同梱（コミットしない、都度再生成）
 rm -rf public/widget && cp -r ../../widget/dist public/widget
 
-# マイグレーション適用（初回のみ）
-npx wrangler d1 execute DB --local --file "$(pwd)/../migrations/0001_init.sql" --config "$(pwd)/wrangler.jsonc"
+# マイグレーション適用（足りない分だけ当たる。migrations を足したら再実行する）
+npx wrangler d1 migrations apply DB --local --config "$(pwd)/wrangler.jsonc"
 
 # 起動
 npx wrangler dev --config "$(pwd)/wrangler.jsonc" --port 8799

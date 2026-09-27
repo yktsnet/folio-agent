@@ -78,9 +78,14 @@ knowledge.json（KnowledgeDocument: pages[] + estimatedTokens + warnings[]）
     ↓ POST {endpoint} { message }
 createChatHandler（入力検証: 非空・1000字以内 / IP: CF-Connecting-IP）
     ↓ graph.invoke
-input_guard（rate-limit: 10分3問・日次10問 = chat_logs の COUNT）
+input_guard（rate-limit: 既定 10分6問・12時間12問 = chat_logs の COUNT）
     ├─ 超過 → 上限メッセージ → log
-    └─ OK → route_message（キーワード分類）→ generate（Gemini + 知識同梱プロンプト）→ log
+    └─ OK → route_message（キーワード分類）→ generate（Gemini + 知識同梱プロンプト）
+              ↓
+            check_answer（回答の形式を検査。違反は answer_violations に記録）
+              ├─ 合っている → log
+              ├─ 違反（1回目）→ 違反を指摘して generate に戻す
+              └─ 作り直しても違反 → fallback（文字だけにする）→ log
     ↓
 { answer, route }
 ```
@@ -89,8 +94,8 @@ input_guard（rate-limit: 10分3問・日次10問 = chat_logs の COUNT）
 
 | 依存 | 用途 | 注入点 |
 |---|---|---|
-| D1（`DB` バインディング） | chat_logs（ログ + レート制限カウンタ兼用） | `ChatHandlerConfig.db` |
-| Gemini API（`GEMINI_API_KEY`） | 回答生成。既定モデル gemini-3.1-flash-lite | `createGeminiGenerator` |
+| D1（`DB` バインディング） | chat_logs（ログ + レート制限カウンタ兼用）、answer_violations（回答の形式の違反の記録） | `ChatHandlerConfig.db` |
+| Gemini API（`GEMINI_API_KEY`） | 回答生成と作り直し。既定モデル gemini-3.5-flash-lite | `createGeminiGenerator` |
 
 ## 検証ハーネス（packages/handler/dev/）
 

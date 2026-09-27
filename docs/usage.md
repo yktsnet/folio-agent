@@ -114,13 +114,13 @@ export default {
 
 `language`（`"ja" | "en"`、既定 `ja`）は `createChatHandler`（上限通知の定型文・ルーティングキーワード）と `createGeminiGenerator`（システムプロンプト）の両方に渡す。片方だけ渡すと定型文とプロンプトの言語がずれる。
 
-D1 スキーマは `packages/handler/migrations/` の SQL（`0001_init.sql` / `0002_answer_violations.sql`）を `wrangler d1 migrations apply` で適用する。`answer_violations` には、回答の形式を破った回答と違反の種類が残る（訪問者の入力は残さない）。どの間違いが多いかは次で集計できる:
+D1 スキーマは `packages/handler/migrations/` の SQL（`0001_init.sql` / `0002_answer_violations.sql`）を `wrangler d1 migrations apply` で適用する。`chat_logs` がログとレート制限カウンタ（既定は10分6問・12時間12問、`rateLimitConfig` で変更可）を兼ねる。`answer_violations` には、回答の形式を破った回答と違反の種類が残る（訪問者の入力は残さない）。どの間違いが多いかは次で集計できる:
 
 ```bash
 npx wrangler d1 execute <DB> --remote --command "SELECT j.value AS kind, attempt, COUNT(*) AS n FROM answer_violations, json_each(answer_violations.kinds) AS j GROUP BY kind, attempt ORDER BY n DESC"
 ```
 
-`attempt = 2` の行が多い種類は、作り直しでも直らない間違いで、プロンプトかコードで手当てする候補になる。`chat_logs` テーブル1つがログとレート制限カウンタ（既定は10分6問・12時間12問、`rateLimitConfig` で変更可）を兼ねる。
+`attempt = 2` の行が多い種類は、作り直しでも直らない間違いで、プロンプトかコードで手当てする候補になる。
 
 ## 3. Widget (frontend)
 
