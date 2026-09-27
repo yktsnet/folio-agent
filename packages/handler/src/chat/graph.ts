@@ -1,4 +1,5 @@
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
+import { normalizeAnswer } from "./answer/normalize.js";
 import { classifyRoute } from "./route.js";
 import type { ChatGraphDeps, ChatRoute, Language, RateLimitConfig, RateLimitReason } from "./types.js";
 import { DEFAULT_LANGUAGE } from "./types.js";
@@ -50,6 +51,7 @@ export function buildChatGraph(deps: ChatGraphDeps) {
         return { answer: GENERATION_FAILED_MESSAGE[language] };
       }
     })
+    .addNode("normalize_answer", async (state) => ({ answer: normalizeAnswer(state.answer ?? "") }))
     .addNode("log", async (state) => {
       await deps.logChat({
         ip: state.ip,
@@ -66,7 +68,8 @@ export function buildChatGraph(deps: ChatGraphDeps) {
       route_message: "route_message",
     })
     .addEdge("route_message", "generate")
-    .addEdge("generate", "log")
+    .addEdge("generate", "normalize_answer")
+    .addEdge("normalize_answer", "log")
     .addEdge("log", END);
 
   return graph.compile();

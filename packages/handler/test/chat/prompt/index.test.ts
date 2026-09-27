@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildSystemPrompt } from "../../src/chat/gemini.js";
-import type { ChatRoute } from "../../src/chat/types.js";
+import { buildSystemPrompt } from "../../../src/chat/prompt/index.js";
+import type { ChatRoute } from "../../../src/chat/types.js";
 
 const ROUTES: Exclude<ChatRoute, "rate_limited">[] = ["thoughts", "works", "inquiry"];
 
