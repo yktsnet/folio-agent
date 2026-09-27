@@ -7,6 +7,7 @@
 - 各route（thoughts/works/inquiry）で無捏造原則（サイト未記載の明示を含む）を含む文言を生成する
 - 各routeでMarkdown禁止・プレーンテキスト出力の指示を含む
 - 各routeで段落分け（2〜4文ごとに空行）の指示を含む
+- 各routeで、リンクは `[表示する文字](URL)` で書き、このサイト内のページはリンクにせず名前で案内する指示を含む
 - 渡されたknowledge文字列をプロンプトに埋め込む
 - route別に異なる指示文を出す
 - inquiry routeでcontactUrl指定時はプロンプトに埋め込み、未指定時は既定の問い合わせ案内文言を使う
@@ -18,6 +19,7 @@
 | 無捏造原則を含む | `includes the no-fabrication principle for %s` |
 | プレーンテキスト出力の指示 | `includes the plain-text output instruction for %s` |
 | 段落分けの指示 | `includes the paragraph-break instruction for %s` |
+| リンクの書き方・サイト内ページの扱いの指示 | `asks for [text](URL) links and names this site's pages instead of linking them, for %s` |
 | knowledgeの埋め込み | `embeds the knowledge for %s` |
 | route別の指示切替 | `switches route-specific instructions per route` |
 | inquiryのcontactUrl扱い（指定時／未指定時） | `embeds contactUrl into the inquiry instruction when provided` / `keeps the existing inquiry wording when contactUrl is not provided` |
@@ -27,6 +29,7 @@
 ### 2. `packages/handler/test/chat/graph.test.ts` — packages/handler/src/chat/graph.ts (buildChatGraph)
 
 - レート制限内ならroute分類→生成→ログ記録まで一気通貫で実行する
+- 生成した回答は `normalize_answer` で回答の形式に直してから返し、ログにも直した後の回答を残す（リンク以外の Markdown を外し、`answerLinks` に無いリンクは文字にする）
 - 生成失敗時は生の例外を出さず、固定のフォールバック文言を返しログに残す
 - レート制限超過時は生成をスキップし、route="rate_limited"・固定の上限文言でログに残す
 - language="en"で英語メッセージの分類・生成・フォールバック・上限文言が英語になる
@@ -34,6 +37,7 @@
 | 保証（要約） | 対応テスト |
 |---|---|
 | 正常系の一気通貫実行 | `routes, generates, and logs when under the rate limit` |
+| 回答の形式への矯正 | `normalizes the generated answer before returning and logging it` |
 | 生成失敗時のフォールバック | `falls back to a canned answer (never a raw error) when generation fails` |
 | レート制限超過時のスキップ | `short-circuits to a canned answer and skips generation when rate-limited` |
 | 英語版の分類・生成・フォールバック・上限文言 | `describe("language: en")` 配下の全テスト |
@@ -200,6 +204,9 @@
 - 既定の案内文と質問候補を表示し、`heading`/`greeting`/`suggestions`属性で差し替え・非表示にできる
 - 質問候補のクリックでその文言を送信し、候補を消す
 - 送信でendpoint属性のURLへPOSTし、ユーザー発言とAI回答を描画する
+- AI回答の `[表示する文字](URL)` はその文字のリンクとして、そのまま書かれた `http(s)://` URL はURLのリンクとして描き、それ以外はテキストのまま扱う（HTMLを解釈しない）。ユーザー発言はリンクにしない
+- 同じサイト内のリンクは同じタブで、外部のリンクは新しいタブ（`noopener noreferrer`）で開く
+- ヘッダ2行目は既定文言を持ち、`slot="subheading"` の要素で差し替えられる
 - 回答待ちの間は入力中表示を出し、送信ボタンを無効にする
 - 「新しい会話」ボタンは発言があるときだけ表示され、押すと案内文と質問候補の状態に戻る。戻す前に送った質問の回答は描画しない
 - ネットワークエラー時は通信エラー文言を表示する
@@ -215,12 +222,33 @@
 | 案内文・質問候補と属性での差し替え | `shows the default greeting and suggestions, and lets attributes override or remove them` |
 | 質問候補の送信 | `sends a suggestion when clicked and removes the suggestions` |
 | 送信・応答描画 | `sends a message to the configured endpoint and renders the answer` |
+| 回答中のリンクの描画 | `renders [text](url) in answers as a link showing the text, not the URL` / `turns bare http(s) URLs in answers into links, leaving the rest as text` / `drops trailing ASCII punctuation from a linked URL` |
+| リンクを開くタブ | `opens same-origin links in the current tab and external links in a new tab` |
+| ヘッダ2行目の slot | `shows the default subheading and lets the site replace it through the subheading slot` |
 | 回答待ちの表示と送信無効化 | `shows a typing indicator and disables sending until the answer arrives` |
 | 新しい会話への切り替え | `shows the new-conversation button only after a message, and resets to the greeting and suggestions` / `drops an answer that arrives after the conversation was reset` |
 | 通信エラー時の表示 | `renders a friendly message when the network request fails` |
 | endpoint未設定時の設定エラー | `shows a config error and does not call fetch when endpoint is missing` |
 | 英語ロケール対応 | `describe("lang=en")` 配下の該当テスト（トグル・プレースホルダ・送信/閉じるラベル・開示文言・エラー文言） |
 | 未知langの日本語フォールバック | `falls back to ja for an unrecognized lang attribute` |
+
+### 14. `packages/handler/test/ingest/format.test.ts` — packages/handler/src/ingest/format.ts (formatKnowledge)
+
+- 各ページのタイトル・URL・本文を、空行で区切ってプロンプト用の知識文字列にする
+
+| 保証（要約） | 対応テスト |
+|---|---|
+| タイトル・URL・本文の整形 | `writes each page's title, URL and text, separated by blank lines` |
+
+### 15. `packages/handler/test/chat/answer/links.test.ts` — packages/handler/src/chat/answer/links.ts (collectAnswerLinks)
+
+- 知識のうち `http(s)://` で始まるページ（このサイトの外）と Contact を、回答に残してよいリンクとして集め、このサイト内のページは含めない
+- Contact の表示名は言語に合わせ、contactUrl が無ければ Contact を含めない
+
+| 保証（要約） | 対応テスト |
+|---|---|
+| 外部ページと Contact の収集 | `lists external pages from the knowledge and the Contact page, leaving this site's pages out` |
+| Contact の表示名と省略 | `titles the Contact page in English with language en, and omits it without a contactUrl` |
 
 ## About
 

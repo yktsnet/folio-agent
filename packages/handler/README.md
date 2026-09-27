@@ -17,15 +17,17 @@ npx folio-agent-ingest folio-agent.config.json knowledge.json
 ```
 
 ```ts
-import { createChatHandler, createGeminiGenerator } from "@folio-agent/handler";
+import { collectAnswerLinks, createChatHandler, createGeminiGenerator, formatKnowledge } from "@folio-agent/handler";
 import knowledgeDoc from "../knowledge.json";
 
-const knowledge = knowledgeDoc.pages.map((p) => `# ${p.url}\n\n${p.text}`).join("\n\n");
+const knowledge = formatKnowledge(knowledgeDoc);
+const answerLinks = collectAnswerLinks(knowledgeDoc);
 
 export default {
   fetch: (request: Request, env: { DB: D1Database; GEMINI_API_KEY: string }) =>
     createChatHandler({
       db: env.DB,
+      answerLinks,
       generateAnswer: createGeminiGenerator({ apiKey: env.GEMINI_API_KEY, knowledge }),
     })(request),
 };

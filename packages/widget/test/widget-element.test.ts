@@ -222,6 +222,104 @@ describe("FolioAgentWidgetElement", () => {
     expect(root.querySelector<HTMLButtonElement>(".send")!.disabled).toBe(false);
   });
 
+  it("renders [text](url) in answers as a link showing the text, not the URL", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        json: () => Promise.resolve({ answer: "経緯は[請求書ツールを作り直した話](https://zenn.dev/foo/articles/bar)にまとめています。" }),
+      }),
+    );
+
+    const root = shadow(mount({ endpoint: "/api/chat" }));
+    open(root);
+    submit(root, "hi");
+    await flush();
+
+    const answer = root.querySelector(".message.assistant")!;
+    const link = answer.querySelector("a")!;
+    expect(link.textContent).toBe("請求書ツールを作り直した話");
+    expect(link.getAttribute("href")).toBe("https://zenn.dev/foo/articles/bar");
+    expect(answer.textContent).toBe("経緯は請求書ツールを作り直した話にまとめています。");
+  });
+
+  it("turns bare http(s) URLs in answers into links, leaving the rest as text", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        json: () =>
+          Promise.resolve({
+            answer: "詳しくは https://zenn.dev/foo/articles/bar をどうぞ。Contact（https://example.com/contact）へ。<b>x</b> javascript:alert(1)",
+          }),
+      }),
+    );
+
+    const el = mount({ endpoint: "/api/chat" });
+    const root = shadow(el);
+    open(root);
+    submit(root, "https://example.com/in-question");
+    await flush();
+
+    const answer = root.querySelector(".message.assistant")!;
+    const links = [...answer.querySelectorAll("a")];
+    expect(links.map((a) => a.getAttribute("href"))).toEqual([
+      "https://zenn.dev/foo/articles/bar",
+      "https://example.com/contact",
+    ]);
+    expect(links.every((a) => a.target === "_blank" && a.rel === "noopener noreferrer")).toBe(true);
+    expect(answer.textContent).toContain("<b>x</b> javascript:alert(1)");
+    expect(answer.querySelector("b")).toBeNull();
+    expect(root.querySelector(".message.user a")).toBeNull();
+  });
+
+  it("opens same-origin links in the current tab and external links in a new tab", async () => {
+    const sameOrigin = `${window.location.origin}/contact/`;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        json: () => Promise.resolve({ answer: `Contact は ${sameOrigin} 、記事は https://zenn.dev/foo です` }),
+      }),
+    );
+
+    const root = shadow(mount({ endpoint: "/api/chat" }));
+    open(root);
+    submit(root, "hi");
+    await flush();
+
+    const [contact, zenn] = root.querySelectorAll<HTMLAnchorElement>(".message.assistant a");
+    expect(contact.getAttribute("href")).toBe(sameOrigin);
+    expect(contact.hasAttribute("target")).toBe(false);
+    expect(zenn.target).toBe("_blank");
+  });
+
+  it("drops trailing ASCII punctuation from a linked URL", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ json: () => Promise.resolve({ answer: "See https://example.com/a." }) }),
+    );
+
+    const root = shadow(mount({ endpoint: "/api/chat" }));
+    open(root);
+    submit(root, "hi");
+    await flush();
+
+    const answer = root.querySelector(".message.assistant")!;
+    expect(answer.querySelector("a")?.getAttribute("href")).toBe("https://example.com/a");
+    expect(answer.textContent).toBe("See https://example.com/a.");
+  });
+
+  it("shows the default subheading and lets the site replace it through the subheading slot", () => {
+    const root = shadow(mount({ endpoint: "/api/chat" }));
+    const slot = root.querySelector<HTMLSlotElement>(".subheading slot[name='subheading']")!;
+    expect(slot.textContent).toBe("公開している情報をもとに AI が答えます");
+
+    const el = document.createElement(FolioAgentWidgetElement.tagName);
+    el.innerHTML = '<span slot="subheading">このサイトと <a href="https://zenn.dev/foo">Zenn</a> の記事をもとに答えます</span>';
+    document.body.appendChild(el);
+    const assigned = el.shadowRoot!.querySelector<HTMLSlotElement>("slot[name='subheading']")!.assignedElements();
+    expect(assigned).toHaveLength(1);
+    expect(assigned[0].querySelector("a")?.getAttribute("href")).toBe("https://zenn.dev/foo");
+  });
+
   it("renders a friendly message when the network request fails", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
 

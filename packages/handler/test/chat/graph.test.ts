@@ -33,6 +33,20 @@ describe("buildChatGraph", () => {
     });
   });
 
+  it("normalizes the generated answer before returning and logging it", async () => {
+    const deps = makeDeps({
+      generateAnswer: vi.fn().mockResolvedValue("**実績**は[記事](https://zenn.dev/foo/a)と[About](https://example.com/about)です"),
+      answerLinks: [{ url: "https://zenn.dev/foo/a", title: "記事" }],
+    });
+    const graph = buildChatGraph(deps);
+
+    const result = await graph.invoke({ input: "Worksについて教えて", ip: "1.2.3.4" });
+
+    const normalized = "実績は[記事](https://zenn.dev/foo/a)とAboutです";
+    expect(result.answer).toBe(normalized);
+    expect(deps.logChat).toHaveBeenCalledWith(expect.objectContaining({ response: normalized }));
+  });
+
   it("falls back to a canned answer (never a raw error) when generation fails", async () => {
     const deps = makeDeps({ generateAnswer: vi.fn().mockRejectedValue(new Error("RESOURCE_EXHAUSTED")) });
     const graph = buildChatGraph(deps);
