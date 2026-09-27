@@ -11,6 +11,7 @@ describe("buildCorrectionRequest", () => {
   it("asks to keep the content and quotes each violation with what to do about it", () => {
     const request = buildCorrectionRequest(VIOLATIONS, "ja");
     expect(request).toContain("内容は変えずに");
+    expect(request).toContain("謝ったり直したことに触れたりせず");
     expect(request).toContain("ページ名で案内し");
     expect(request).toContain(": [Works](/)");
     expect(request).toContain(": https://zenn.dev/foo/a");
@@ -20,6 +21,7 @@ describe("buildCorrectionRequest", () => {
   it("writes the request in English with language en, without Japanese wording", () => {
     const request = buildCorrectionRequest(VIOLATIONS, "en");
     expect(request).toContain("Keep the content");
+    expect(request).toContain("do not apologize or mention it");
     expect(request).not.toMatch(/[ぁ-んァ-ヶ]/);
   });
 });

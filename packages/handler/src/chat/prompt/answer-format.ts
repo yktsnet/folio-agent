@@ -17,3 +17,11 @@ export const ANSWER_FORMAT: Record<Language, string> = {
     "The visitor is already on this site, so refer to pages marked \"(a page on this site)\" in the knowledge by name (e.g. \"the About page\") instead of linking them. " +
     'Only link the Contact page and pages outside this site that appear in the knowledge as "URL: https://…".',
 };
+
+// Contact は経路に関係なく案内されうる。URL を渡さないと LLM は /contact のような URL を作ってしまうので、
+// 書き方の見本をそのまま渡す
+export function buildContactLinkExample(language: Language, contactUrl: string): string {
+  return language === "en"
+    ? `When pointing to the Contact page, write it exactly like this: [Contact page](${contactUrl})`
+    : `Contactページを案内するときは、次の書き方をそのまま使ってください: [Contactページ](${contactUrl})`;
+}

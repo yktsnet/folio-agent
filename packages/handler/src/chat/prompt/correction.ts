@@ -20,8 +20,12 @@ const KIND_TEXT: Record<Language, Record<AnswerViolationKind, string>> = {
 };
 
 const INTRO: Record<Language, string> = {
-  ja: "直前の回答は、回答の形式の決まりに次の点で合っていません。内容は変えずに、決まりに合わせて回答だけを書き直してください。",
-  en: "Your previous answer breaks the answer format in the following ways. Keep the content and rewrite only the answer so it complies.",
+  ja:
+    "直前の回答は、回答の形式の決まりに次の点で合っていません。内容は変えずに、決まりに合わせて回答だけを書き直してください。" +
+    "書き直したことは訪問者には見えないので、謝ったり直したことに触れたりせず、訪問者への回答だけを書いてください。",
+  en:
+    "Your previous answer breaks the answer format in the following ways. Keep the content and rewrite only the answer so it complies. " +
+    "The visitor never sees this correction, so do not apologize or mention it; write only the answer to the visitor.",
 };
 
 export function buildCorrectionRequest(violations: AnswerViolation[], language: Language): string {

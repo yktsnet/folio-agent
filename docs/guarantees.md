@@ -11,7 +11,7 @@
 - 渡されたknowledge文字列をプロンプトに埋め込む
 - route別に異なる指示文を出す
 - inquiry routeでcontactUrl指定時はプロンプトに埋め込み、未指定時は既定の問い合わせ案内文言を使う
-- thoughts/worksrouteではcontactUrlを無視する
+- contactUrl指定時は、どのrouteでもContactへのリンクの書き方の見本（`[Contactページ](URL)`）を含める
 - language="en"指定時、上記の各保証が英語で提供され、日本語語彙が混入しない
 
 | 保証（要約） | 対応テスト |
@@ -23,7 +23,7 @@
 | knowledgeの埋め込み | `embeds the knowledge for %s` |
 | route別の指示切替 | `switches route-specific instructions per route` |
 | inquiryのcontactUrl扱い（指定時／未指定時） | `embeds contactUrl into the inquiry instruction when provided` / `keeps the existing inquiry wording when contactUrl is not provided` |
-| thoughts/worksでのcontactUrl無視 | `ignores contactUrl for thoughts and works routes` |
+| Contactリンクの見本（全route） | `gives the Contact link as an example to copy on every route when contactUrl is provided, for %s` / `gives the Contact link example in English` |
 | 英語版での上記保証・日本語語彙の非混入 | `describe("language: en")` 配下の全テスト |
 
 ### 2. `packages/handler/test/chat/graph.test.ts` — packages/handler/src/chat/graph.ts (buildChatGraph)
