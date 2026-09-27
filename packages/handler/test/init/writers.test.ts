@@ -142,6 +142,11 @@ describe("appendIngestToBuildScript", () => {
     expect(appendIngestToBuildScript("astro build", configPath, outputPath)).toBe(`astro build && ${ingestCommand}`);
   });
 
+  it("leaves the script unchanged when it already runs ingest with a different output path", () => {
+    const script = "astro build && folio-agent-ingest folio-agent.config.json dist/client/knowledge.json";
+    expect(appendIngestToBuildScript(script, configPath, outputPath)).toBe(script);
+  });
+
   it("leaves the script unchanged when it already includes the ingest command", () => {
     const script = `astro build && ${ingestCommand}`;
     expect(appendIngestToBuildScript(script, configPath, outputPath)).toBe(script);

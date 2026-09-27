@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, realpathSync, statSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { dirname, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { IngestConfig } from "../ingest/types.js";
 import { DEFAULT_API_ROUTE_PATH, InitArgsError, resolveInitRun, USAGE } from "./options.js";
@@ -22,7 +22,6 @@ const CONFIG_PATH = "folio-agent.config.json";
 const PACKAGE_JSON_PATH = "package.json";
 const DEV_VARS_PATH = ".dev.vars";
 const GITIGNORE_PATH = ".gitignore";
-const KNOWLEDGE_OUTPUT_PATH = "dist/knowledge.json";
 
 interface PackageJsonLike {
   scripts?: Record<string, string>;
@@ -105,7 +104,9 @@ export async function main(
 
   const pkg = (await readJson<PackageJsonLike>(PACKAGE_JSON_PATH)) ?? {};
   const scripts = pkg.scripts ?? {};
-  const nextBuildScript = appendIngestToBuildScript(scripts.build, CONFIG_PATH, KNOWLEDGE_OUTPUT_PATH);
+  // API ルート雛形は <distDir>/knowledge.json を import するので、出力先もそこに揃える
+  const knowledgeOutputPath = posix.join(answers.distDir, "knowledge.json");
+  const nextBuildScript = appendIngestToBuildScript(scripts.build, CONFIG_PATH, knowledgeOutputPath);
   const buildScriptChanged = nextBuildScript !== (scripts.build ?? "");
 
   const { nextDevVars, gitignoreResult } = planDevVarsAndGitignore(

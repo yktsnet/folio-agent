@@ -153,6 +153,7 @@
 - 対話を持たず、引数と環境変数だけで動く。初回は既定値で config json・APIルート雛形・`.dev.vars`（`GEMINI_API_KEY` がある場合）・`.gitignore`・build スクリプトを整合した内容で生成し、既定の `auto` ではテーマCSSを書かない
 - `--theme` のプリセットでテーマCSSを書き、`--theme auto` に戻すと削除する
 - 既存configがある場合、渡さなかった値と init が扱わないフィールドは維持し、APIルート雛形は生成しない
+- build スクリプトへ追記する ingest の出力先は `<distDir>/knowledge.json` で、build スクリプトが既に `folio-agent-ingest` を含むなら（引数が違っても）追記しない
 - `--dry-run` では何も書き込まない
 - 不正な引数では何も書き込まず `process.exitCode = 1` を設定する
 - npmがnode_modules/.bin/に張るシンボリックリンク経由で実行された場合もmain()を実行する
@@ -162,6 +163,7 @@
 | フレッシュセットアップの生成物一式 | `writes config json, API route scaffold, .dev.vars and .gitignore for a fresh setup, with no theme CSS by default` |
 | テーマCSSの生成と auto での削除 | `writes the theme CSS for a theme preset, and removes it again with --theme auto` |
 | 再実行での値の維持・雛形のスキップ | `keeps an existing config's values and unmanaged fields on a re-run, and skips the API route scaffold` |
+| ingest の出力先と二重追記の防止 | `writes knowledge.json under distDir, and doesn't add a second ingest to a build script that already has one` |
 | `--dry-run` で書き込みなし | `writes nothing with --dry-run` |
 | 不正な引数での exitCode | `sets process.exitCode to 1 and writes nothing on invalid arguments` |
 | binシンボリックリンク経由でのmain()実行 | `describe("folio-agent-init CLI (bin symlink execution)")` > `runs main() and prints usage when invoked via a bin-style symlink` |
