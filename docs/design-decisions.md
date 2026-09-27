@@ -4,6 +4,17 @@
 
 folio-agent の設計判断の全文。各判断は「何を選んだか」だけでなく「何を捨てたか・どの境界で再検討するか」まで記す。要点だけ知りたい場合は [README の Design Decisions](../README.md#design-decisions) を参照。
 
+## LLM の出力をコードで保証する理由
+
+LLM の出力は確率的で、プロンプトで頼んだ形式が守られる保証はない。受付チャットで困るのは、形の崩れ（Markdown の記号が混ざる）と参照先の誤り（存在しない URL、いま見ているサイトへのリンク）で、どちらも訪問者の信頼を直接損なう。そこで LLM に任せるのは文章の中身だけにし、回答を4段で扱う。
+
+1. **材料**: 指示に従えるだけの材料を渡す。渡していない情報（記事のタイトルなど）を使えという指示は守りようがない
+2. **指示**（`chat/prompt/`）: 形式を頼む。守られる前提は置かない
+3. **検証と矯正**（`chat/answer/`、グラフの `normalize_answer` ノード）: 生成の後ろで、回答を handler と widget のあいだで決めた形式へコードで直す。保証の本体はここにある
+4. **表示**（widget）: 決まった形式だけを前提に描く。HTML は解釈しない
+
+検証と矯正を widget ではなく handler に置くのは、許可してよい参照先（知識に含まれる URL・Contact）を知っているのが handler だけだから。グラフのノードにするのは、生成と記録のあいだに決定的な段を挟む形を、ルールが増えても崩さないため。作者の [order-system-rag](https://github.com/yktsnet/order-system-rag) が、LLM の生成した SQL を実行前に決定的に検査するのと同じ考え方で、LLM の後ろには必ずコードの検問を置く。
+
 ## CAG を選ぶ理由
 
 知識源がLLMのコンテキストに余裕で収まる規模では、検索基盤を足すのは過剰。ベクトルDBとembeddingパイプラインを持たないことで壊れる部品が減り、利用者のセットアップも軽くなる。知識が肥大してコンテキスト・コスト・応答品質が劣化したらRAGへ切り替えるべき境界が存在し、境界を知った上で手前側を選ぶのが本リポの主張。作者の [order-system-migration](https://github.com/yktsnet/order-system-migration)（Text-to-SQL）・[order-system-rag](https://github.com/yktsnet/order-system-rag)（RAG）が「質問の性質」でツールを選んだのに対し、本リポは「知識の規模」で選ぶ第3の判断軸を実証する。

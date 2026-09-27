@@ -22,9 +22,17 @@ folio-agent/
 │   │   │   │   └── writers.ts        # 値 → config JSON / theme CSS / APIルート雛形 / build script / .dev.vars の生成
 │   │   │   └── chat/         # チャットハンドラ（実行時・Workers で動く）
 │   │   │       ├── handler.ts        # createChatHandler: Request→Response（入力検証・IP取得）
-│   │   │       ├── graph.ts          # LangGraph StateGraph（input_guard → route → generate → log）
+│   │   │       ├── graph.ts          # LangGraph StateGraph（input_guard → route → generate → normalize_answer → log）
 │   │   │       ├── route.ts          # キーワードによる経路分類（thoughts / works / inquiry）
-│   │   │       ├── gemini.ts         # システムプロンプト組み立て + Gemini 呼び出し
+│   │   │       ├── gemini.ts         # Gemini 呼び出しだけ
+│   │   │       ├── prompt/           # システムプロンプト（言語別の文面）。LLM に形式を「頼む」側
+│   │   │       │   ├── index.ts          # buildSystemPrompt（下の部品を組み立てる）
+│   │   │       │   ├── persona.ts        # 役割・口調・長さ
+│   │   │       │   ├── grounding.ts      # 知識だけで答える・創作しない
+│   │   │       │   ├── answer-format.ts  # 回答の形式の指示
+│   │   │       │   └── routes.ts         # 経路ごとの指示
+│   │   │       ├── answer/           # 回答の形式を「保証する」側（生成の後ろでコードが直す）
+│   │   │       │   └── normalize.ts      # normalizeAnswer（graph の normalize_answer ノードが呼ぶ）
 │   │   │       ├── rate-limit.ts     # chat_logs の COUNT による 10分/日次 制限
 │   │   │       ├── log.ts            # chat_logs への INSERT
 │   │   │       └── types.ts

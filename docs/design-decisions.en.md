@@ -4,6 +4,17 @@
 
 The full text of folio-agent's design decisions. Each one records not only what was chosen but also what was rejected and at which boundary to revisit it. For the key points only, see [Design Decisions in the README](../README.en.md#design-decisions).
 
+## Why code, not the prompt, guarantees the model's output
+
+LLM output is probabilistic; nothing guarantees the format a prompt asks for. What hurts a reception chat is a broken shape (stray Markdown) and wrong references (URLs that don't exist, links to the page the visitor is already on), and both erode trust directly. So the model is trusted with the prose only, and an answer goes through four stages.
+
+1. **Material**: give the model what it needs to comply. An instruction to use information it never received (such as article titles) cannot be followed
+2. **Instruction** (`chat/prompt/`): ask for the format, without assuming it will be followed
+3. **Check and correct** (`chat/answer/`, the `normalize_answer` node in the graph): after generation, code brings the answer into the format agreed between handler and widget. This is where the guarantee lives
+4. **Render** (widget): draws only that format. No HTML is parsed
+
+Checking lives in the handler rather than the widget because only the handler knows which references are allowed (URLs in the knowledge, the Contact URL). It is a graph node so that a deterministic stage between generation and logging stays in place as rules are added. It is the same idea as the author's [order-system-rag](https://github.com/yktsnet/order-system-rag), which checks model-generated SQL deterministically before running it: code always stands behind the model.
+
 ## Why CAG
 
 When the knowledge fits comfortably in an LLM's context, adding a search layer is overkill. Having no vector DB or embedding pipeline means fewer parts that can break and a lighter setup for users. There is a boundary beyond which growing knowledge degrades context, cost, and answer quality, and switching to RAG makes sense; this repo's claim is to pick the near side while knowing where that boundary is. Where the author's [order-system-migration](https://github.com/yktsnet/order-system-migration) (Text-to-SQL) and [order-system-rag](https://github.com/yktsnet/order-system-rag) (RAG) chose tools by "the nature of the question", this repo demonstrates a third axis: choosing by "the scale of the knowledge".

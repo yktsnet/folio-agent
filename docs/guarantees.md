@@ -2,7 +2,7 @@
 
 ## Guarantees
 
-### 1. `packages/handler/test/chat/gemini.test.ts` — packages/handler/src/chat/gemini.ts (buildSystemPrompt)
+### 1. `packages/handler/test/chat/prompt/index.test.ts` — packages/handler/src/chat/prompt/index.ts (buildSystemPrompt)
 
 - 各route（thoughts/works/inquiry）で無捏造原則（サイト未記載の明示を含む）を含む文言を生成する
 - 各routeでMarkdown禁止・プレーンテキスト出力の指示を含む
