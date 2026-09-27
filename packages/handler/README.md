@@ -9,10 +9,10 @@
 ```bash
 npm install @folio-agent/handler
 
-# 対話ウィザードで初期設定（config・テーマCSS・APIルート雛形などを生成）
-npx folio-agent-init
+# 初期設定（config・APIルート雛形などを生成。引数は --help）
+npx folio-agent-init --include "/,/works/**,/about"
 
-# ビルド時: 知識ファイルの生成（ウィザードが build スクリプトに追記する）
+# ビルド時: 知識ファイルの生成（init が build スクリプトに追記する）
 npx folio-agent-ingest folio-agent.config.json knowledge.json
 ```
 

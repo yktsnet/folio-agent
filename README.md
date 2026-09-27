@@ -24,12 +24,12 @@
 
 ```bash
 npm install @folio-agent/widget @folio-agent/handler
-npx folio-agent-init
+npx folio-agent-init --include "/,/works/**,/about" --contact-url https://example.com/contact
 ```
 
-`folio-agent-init` が設定ファイル・API ルートの雛形・`build` スクリプトへの ingest の追記・`.dev.vars` を用意する。最後に表示されるスニペット（widget のタグ）を、サイトのレイアウトへ1度だけ貼る。
+`folio-agent-init` は対話を持たず、引数だけで設定ファイル・API ルートの雛形・`build` スクリプトへの ingest の追記・`.dev.vars` を用意する。再実行すると、渡さなかった値は前回のまま残る。Gemini API キーは引数では受け取らず、環境変数 `GEMINI_API_KEY` があれば `.dev.vars` に書く。最後に表示されるスニペット（widget のタグ）を、サイトのレイアウトへ1度だけ貼る。
 
-手で設定する手順と、config・handler・widget の詳細は [docs/usage.md](docs/usage.md) にある。
+引数の一覧（`npx folio-agent-init --help`）、手で設定する手順、config・handler・widget の詳細は [docs/usage.md](docs/usage.md) にある。導入を AI エージェントに任せる場合も、この README と docs/usage.md を読ませれば足りる。
 
 ## How It Works
 

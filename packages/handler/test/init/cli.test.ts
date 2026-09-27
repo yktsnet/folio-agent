@@ -4,7 +4,6 @@ import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as clack from "@clack/prompts";
 import { buildApiRouteTemplate, buildThemeCss } from "../../src/init/writers.js";
 import type { IngestConfig } from "../../src/ingest/types.js";
 import { main, planDevVarsAndGitignore } from "../../src/init/cli.js";
@@ -13,40 +12,7 @@ import { main, planDevVarsAndGitignore } from "../../src/init/cli.js";
 // bin-symlink regression test below is skipped when it's missing.
 const distCliPath = join(import.meta.dirname, "../../dist/init/cli.js");
 
-vi.mock("@clack/prompts", () => ({
-  intro: vi.fn(),
-  outro: vi.fn(),
-  cancel: vi.fn(),
-  note: vi.fn(),
-  isCancel: vi.fn(() => false),
-  select: vi.fn(),
-  text: vi.fn(),
-  confirm: vi.fn(),
-  password: vi.fn(),
-}));
-
 const THEME = { accent: "#2563eb", surface: "#ffffff", text: "#111827" };
-
-/** Queues the wizard answers a full run (no zenn) asks for, in the exact order `runWizard` calls them. */
-function stubWizardAnswers(overrides: {
-  contactUrl?: string;
-  geminiApiKey?: string;
-  apiRoutePath?: string;
-}): void {
-  vi.mocked(clack.select).mockResolvedValueOnce("ja");
-  vi.mocked(clack.text)
-    .mockResolvedValueOnce("dist") // distDir
-    .mockResolvedValueOnce("/**") // include
-    .mockResolvedValueOnce(overrides.contactUrl ?? "") // contactUrl
-    .mockResolvedValueOnce(THEME.accent) // accent
-    .mockResolvedValueOnce(THEME.surface) // surface
-    .mockResolvedValueOnce(THEME.text) // text
-    .mockResolvedValueOnce(overrides.apiRoutePath ?? "functions/api/chat.ts"); // apiRoutePath
-  vi.mocked(clack.confirm)
-    .mockResolvedValueOnce(false) // wantsZenn
-    .mockResolvedValueOnce(true); // shouldWrite (confirm before writing)
-  vi.mocked(clack.password).mockResolvedValueOnce(overrides.geminiApiKey ?? "");
-}
 
 describe("folio-agent-init main (E2E)", () => {
   let root: string;
@@ -56,86 +22,96 @@ describe("folio-agent-init main (E2E)", () => {
     root = await mkdtemp(join(tmpdir(), "folio-agent-init-cli-"));
     originalCwd = process.cwd();
     process.chdir(root);
-    vi.clearAllMocks();
-    vi.mocked(clack.isCancel).mockReturnValue(false);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    process.exitCode = undefined;
   });
 
   afterEach(async () => {
     process.chdir(originalCwd);
+    vi.restoreAllMocks();
+    process.exitCode = undefined;
     await rm(root, { recursive: true, force: true });
   });
 
-  it("writes config json, theme css, API route scaffold, .dev.vars and .gitignore for a fresh setup", async () => {
-    stubWizardAnswers({ geminiApiKey: "abc123" });
-
-    await main();
+  it("writes config json, API route scaffold, .dev.vars and .gitignore for a fresh setup, with no theme CSS by default", async () => {
+    await main([], { GEMINI_API_KEY: "abc123" });
 
     const config = JSON.parse(await readFile("folio-agent.config.json", "utf-8"));
-    expect(config).toEqual({
-      distDir: "dist",
-      include: ["/**"],
-      language: "ja",
-      theme: THEME,
-    });
+    expect(config).toEqual({ distDir: "dist", include: ["/**"], language: "ja" });
 
-    const themeCss = await readFile("folio-agent.theme.css", "utf-8");
-    expect(themeCss).toBe(buildThemeCss(THEME));
+    expect(existsSync("folio-agent.theme.css")).toBe(false);
 
     const apiRoute = await readFile("functions/api/chat.ts", "utf-8");
     expect(apiRoute).toBe(
       buildApiRouteTemplate({ apiRoutePath: "functions/api/chat.ts", distDir: "dist", language: "ja" }),
     );
 
-    const devVars = await readFile(".dev.vars", "utf-8");
-    expect(devVars).toBe("GEMINI_API_KEY=abc123\n");
-
-    const gitignore = await readFile(".gitignore", "utf-8");
-    expect(gitignore).toBe(".dev.vars\n");
+    expect(await readFile(".dev.vars", "utf-8")).toBe("GEMINI_API_KEY=abc123\n");
+    expect(await readFile(".gitignore", "utf-8")).toBe(".dev.vars\n");
 
     const pkg = JSON.parse(await readFile("package.json", "utf-8"));
     expect(pkg.scripts.build).toBe("folio-agent-ingest folio-agent.config.json dist/knowledge.json");
   });
 
-  it("preserves fields the wizard doesn't ask about from an existing config, and skips the API route scaffold when unanswered", async () => {
+  it("writes the theme CSS for a theme preset, and removes it again with --theme auto", async () => {
+    await main(["--theme", "custom", "--accent", THEME.accent, "--surface", THEME.surface, "--text", THEME.text], {});
+    expect(await readFile("folio-agent.theme.css", "utf-8")).toBe(buildThemeCss(THEME));
+    expect(JSON.parse(await readFile("folio-agent.config.json", "utf-8")).theme).toEqual(THEME);
+
+    await main(["--theme", "auto"], {});
+    expect(existsSync("folio-agent.theme.css")).toBe(false);
+    expect(JSON.parse(await readFile("folio-agent.config.json", "utf-8")).theme).toBeUndefined();
+  });
+
+  it("keeps an existing config's values and unmanaged fields on a re-run, and skips the API route scaffold", async () => {
     const previous: IngestConfig = {
       distDir: "old-dist",
       include: ["/old/**"],
       exclude: ["/old/draft-*"],
       knowledgeDir: "knowledge",
       tokenWarningThreshold: 50000,
-      language: "ja",
+      zennSnapshotPath: "zenn-snapshot.json",
+      language: "en",
       theme: THEME,
     };
     await writeFile("folio-agent.config.json", JSON.stringify(previous, null, 2));
 
-    stubWizardAnswers({ apiRoutePath: "" });
-
-    await main();
+    await main(["--include", "/, /about"], {});
 
     const config = JSON.parse(await readFile("folio-agent.config.json", "utf-8"));
-    expect(config).toEqual({
-      distDir: "dist",
-      include: ["/**"],
-      language: "ja",
-      theme: THEME,
-      exclude: ["/old/draft-*"],
-      knowledgeDir: "knowledge",
-      tokenWarningThreshold: 50000,
-    });
+    expect(config).toEqual({ ...previous, include: ["/", "/about"] });
+    expect(await readFile("folio-agent.theme.css", "utf-8")).toBe(buildThemeCss(THEME));
+    expect(existsSync("functions/api/chat.ts")).toBe(false);
+    expect(existsSync(".dev.vars")).toBe(false);
+  });
 
-    await expect(readFile("functions/api/chat.ts", "utf-8")).rejects.toThrow();
-    await expect(readFile(".dev.vars", "utf-8")).rejects.toThrow();
+  it("writes nothing with --dry-run", async () => {
+    await main(["--dry-run", "--theme", "poimandres"], { GEMINI_API_KEY: "abc123" });
+
+    expect(existsSync("folio-agent.config.json")).toBe(false);
+    expect(existsSync("folio-agent.theme.css")).toBe(false);
+    expect(existsSync("functions/api/chat.ts")).toBe(false);
+    expect(existsSync(".dev.vars")).toBe(false);
+    expect(existsSync("package.json")).toBe(false);
+  });
+
+  it("sets process.exitCode to 1 and writes nothing on invalid arguments", async () => {
+    await main(["--theme", "dracula"], {});
+
+    expect(process.exitCode).toBe(1);
+    expect(existsSync("folio-agent.config.json")).toBe(false);
   });
 });
 
 describe("planDevVarsAndGitignore", () => {
-  it("still ensures .gitignore protects .dev.vars when the Gemini API key is skipped", () => {
+  it("still ensures .gitignore protects .dev.vars when GEMINI_API_KEY is not set", () => {
     const plan = planDevVarsAndGitignore(undefined, "", "");
     expect(plan.nextDevVars).toBeUndefined();
     expect(plan.gitignoreResult).toEqual({ content: ".dev.vars\n", changed: true });
   });
 
-  it("reports no gitignore change when .dev.vars is already protected and the key is skipped", () => {
+  it("reports no gitignore change when .dev.vars is already protected and the key is not set", () => {
     const plan = planDevVarsAndGitignore(undefined, "", "node_modules\n.dev.vars\n");
     expect(plan.nextDevVars).toBeUndefined();
     expect(plan.gitignoreResult).toEqual({ content: "node_modules\n.dev.vars\n", changed: false });
@@ -155,17 +131,12 @@ describe("planDevVarsAndGitignore", () => {
 });
 
 describe.skipIf(!existsSync(distCliPath))("folio-agent-init CLI (bin symlink execution)", () => {
-  // Importing main (as the tests above do, with @clack/prompts mocked) can never catch a
-  // regression in the "am I being run directly?" guard, since import never triggers it. npm's
-  // node_modules/.bin/ entries are symlinks to the real file, so this spawns the compiled CLI
-  // through a symlink — mirroring how `folio-agent-init` actually gets invoked once installed.
-  //
-  // The wizard is interactive, so driving it to completion would require emulating its exact
-  // keystroke sequence — fragile and beside the point of this test. Instead, stdin is left as
-  // /dev/null (no TTY, immediate EOF): main() starts runWizard(), which prints its intro banner
-  // before blocking on the first prompt; once the event loop has nothing else to do, the process
-  // exits cleanly on its own. Observing the banner is enough to prove main() ran.
-  it("runs main() and starts the wizard when invoked via a bin-style symlink", async () => {
+  // Importing main (as the tests above do) can never catch a regression in the "am I being run
+  // directly?" guard, since import never triggers it. npm's node_modules/.bin/ entries are
+  // symlinks to the real file, so this spawns the compiled CLI through a symlink — mirroring how
+  // `folio-agent-init` actually gets invoked once installed. `--help` proves main() ran without
+  // writing into the temp directory.
+  it("runs main() and prints usage when invoked via a bin-style symlink", async () => {
     const root = await mkdtemp(join(tmpdir(), "folio-agent-init-cli-bin-"));
     try {
       const binDir = join(root, "bin");
@@ -173,13 +144,13 @@ describe.skipIf(!existsSync(distCliPath))("folio-agent-init CLI (bin symlink exe
       const binPath = join(binDir, "folio-agent-init");
       await symlink(distCliPath, binPath);
 
-      const result = execFileSync("node", [binPath], {
+      const result = execFileSync("node", [binPath, "--help"], {
         cwd: root,
         encoding: "utf-8",
         stdio: ["ignore", "pipe", "pipe"],
       });
 
-      expect(result).toContain("folio-agent-init");
+      expect(result).toContain("Usage: folio-agent-init");
     } finally {
       await rm(root, { recursive: true, force: true });
     }

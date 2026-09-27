@@ -16,10 +16,10 @@ folio-agent/
 │   │   │   │   ├── html-to-text.ts   # HTML → テキスト抽出（node-html-parser）
 │   │   │   │   ├── token-count.ts    # トークン量の概算・上限警告
 │   │   │   │   └── types.ts          # IngestConfig / KnowledgeDocument など
-│   │   │   ├── init/         # 対話セットアップ CLI（Node で実行）
-│   │   │   │   ├── cli.ts            # bin: folio-agent-init（@clack/prompts でウィザード実行）
-│   │   │   │   ├── questions.ts      # 質問フロー定義・回答型・入力バリデーション
-│   │   │   │   └── writers.ts        # 回答 → config JSON / theme CSS / APIルート雛形 / build script / .dev.vars の生成
+│   │   │   ├── init/         # セットアップ CLI（Node で実行。引数のみで対話なし）
+│   │   │   │   ├── cli.ts            # bin: folio-agent-init（計画の表示と書き込み）
+│   │   │   │   ├── options.ts        # 引数の解釈・前回 config との合成・入力バリデーション・テーマプリセット
+│   │   │   │   └── writers.ts        # 値 → config JSON / theme CSS / APIルート雛形 / build script / .dev.vars の生成
 │   │   │   └── chat/         # チャットハンドラ（実行時・Workers で動く）
 │   │   │       ├── handler.ts        # createChatHandler: Request→Response（入力検証・IP取得）
 │   │   │       ├── graph.ts          # LangGraph StateGraph（input_guard → route → generate → log）

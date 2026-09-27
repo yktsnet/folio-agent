@@ -2,7 +2,31 @@
 
 # Usage / API
 
-Manual setup without `folio-agent-init`, and API details for each package. For the overall picture, see the [README](../README.en.md).
+`folio-agent-init` options, and API details for each package when setting up by hand. For the overall picture, see the [README](../README.en.md).
+
+## 0. Setup (`folio-agent-init`)
+
+```bash
+npx folio-agent-init [options]
+```
+
+It is not interactive. It changes only the values you pass and keeps everything else as it is in the existing `folio-agent.config.json` (defaults on the first run). With `--dry-run` it prints what it would write and writes nothing.
+
+| Option | Meaning | Default |
+|---|---|---|
+| `--lang <ja\|en>` | UI and prompt language | `ja` |
+| `--dist <dir>` | Build output directory | `dist` |
+| `--include <globs>` | URL globs to include in the knowledge (comma-separated) | `/**` |
+| `--zenn-dir <path>` / `--zenn-user <name\|url>` | Zenn article ingestion; pass both. `--no-zenn` removes it | none |
+| `--contact-url <url>` | Contact page URL written into the API route scaffold | none |
+| `--theme <auto\|poimandres\|custom>` | Colors. `auto` writes no theme CSS and follows the site's colors | `auto` |
+| `--accent` / `--surface` / `--text <hex>` | The three colors for `--theme custom`; passing any implies `custom` | none |
+| `--api-route <path>` / `--no-api-route` | Where to generate the API route scaffold. An existing file is never overwritten | `functions/api/chat.ts` on the first run only |
+| `--dry-run` | Print what would be written without writing | |
+
+The Gemini API key is never taken as an argument (it would end up in shell history and conversation logs). If the `GEMINI_API_KEY` environment variable is set, it is written to `.dev.vars`; otherwise, add it to `.dev.vars` by hand. `.dev.vars` is added to `.gitignore` either way.
+
+Switching back to `--theme auto` deletes a previously written `folio-agent.theme.css`.
 
 ## 1. Knowledge Generation (build time)
 
@@ -20,7 +44,7 @@ npx folio-agent-ingest folio-agent.config.json knowledge.json
 }
 ```
 
-`IngestConfig` (`distDir` / `include` / `exclude` / `knowledgeDir` / `zenn` / `tokenWarningThreshold`) is exported as a type from `@folio-agent/handler`. `language` and `theme` are fields `folio-agent-init` uses to keep its answers; ingest itself does not read them. Markdown placed in `knowledgeDir` mirrors URL paths and is not subject to include/exclude (only what you place there is included).
+`IngestConfig` (`distDir` / `include` / `exclude` / `knowledgeDir` / `zenn` / `tokenWarningThreshold`) is exported as a type from `@folio-agent/handler`. `language` and `theme` are fields `folio-agent-init` uses to keep its previous values; ingest itself does not read them. init never rewrites fields it doesn't manage (`exclude` / `knowledgeDir` / `zennSnapshotPath`, and so on). Markdown placed in `knowledgeDir` mirrors URL paths and is not subject to include/exclude (only what you place there is included).
 
 To include Zenn articles as knowledge, set `zenn` (omit it to skip). No request is made to zenn.dev: ingest reads the Zenn CLI `articles/` directory locally and takes only articles whose frontmatter has `published: true`:
 
