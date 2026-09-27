@@ -2,30 +2,26 @@ import { posix } from "node:path";
 import { DEFAULT_LANGUAGE } from "../chat/types.js";
 import type { Language } from "../chat/types.js";
 import type { IngestConfig, ThemeColors, ZennIngestConfig } from "../ingest/types.js";
-import type { WizardAnswers } from "./questions.js";
+import type { InitAnswers } from "./options.js";
 
 const INGEST_COMMAND_PREFIX = "folio-agent-ingest";
 
 export const THEME_CSS_FILENAME = "folio-agent.theme.css";
 export const PUBLIC_DIR_NAME = "public";
 
-/** Builds `folio-agent.config.json` content, preserving fields the wizard never asks about. */
-export function buildConfigJson(answers: WizardAnswers, previous?: IngestConfig): IngestConfig {
+/** Builds `folio-agent.config.json` content, keeping every previous field that init doesn't manage. */
+export function buildConfigJson(answers: InitAnswers, previous?: IngestConfig): IngestConfig {
   const config: IngestConfig = {
+    ...previous,
     distDir: answers.distDir,
     include: answers.include,
     language: answers.language,
-    theme: answers.theme,
   };
+  delete config.theme;
+  delete config.zenn;
 
-  if (previous?.exclude) {
-    config.exclude = previous.exclude;
-  }
-  if (previous?.knowledgeDir) {
-    config.knowledgeDir = previous.knowledgeDir;
-  }
-  if (previous?.tokenWarningThreshold !== undefined) {
-    config.tokenWarningThreshold = previous.tokenWarningThreshold;
+  if (answers.theme) {
+    config.theme = answers.theme;
   }
   if (answers.zenn) {
     config.zenn = answers.zenn satisfies ZennIngestConfig;
@@ -34,7 +30,7 @@ export function buildConfigJson(answers: WizardAnswers, previous?: IngestConfig)
   return config;
 }
 
-/** Builds `folio-agent.theme.css` content. Re-running the wizard only rewrites this file, which HMR picks up. */
+/** Builds `folio-agent.theme.css` content. Re-running init only rewrites this file, which HMR picks up. */
 export function buildThemeCss(theme: ThemeColors): string {
   return [
     "folio-agent-widget {",

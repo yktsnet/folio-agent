@@ -24,12 +24,12 @@ npm packages that add a reception chatbot to a static site, answering only from 
 
 ```bash
 npm install @folio-agent/widget @folio-agent/handler
-npx folio-agent-init
+npx folio-agent-init --include "/,/works/**,/about" --contact-url https://example.com/contact
 ```
 
-`folio-agent-init` prepares the config file, an API route scaffold, the ingest step in your `build` script, and `.dev.vars`. Paste the snippet it prints at the end (the widget tag) into your site's layout, once.
+`folio-agent-init` is not interactive: from arguments alone it prepares the config file, an API route scaffold, the ingest step in your `build` script, and `.dev.vars`. Re-running keeps every value you don't pass. The Gemini API key is never taken as an argument; if the `GEMINI_API_KEY` environment variable is set, it is written to `.dev.vars`. Paste the snippet it prints at the end (the widget tag) into your site's layout, once.
 
-For manual setup and details on the config, handler, and widget, see [docs/usage.en.md](docs/usage.en.md).
+The full option list (`npx folio-agent-init --help`), manual setup, and details on the config, handler, and widget are in [docs/usage.en.md](docs/usage.en.md). To hand the setup to an AI agent, this README and docs/usage.en.md are all it needs to read.
 
 ## How It Works
 

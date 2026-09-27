@@ -2,7 +2,31 @@
 
 # Usage / API
 
-`folio-agent-init` を使わず手で設定する場合と、各パッケージの API 詳細。導入の全体像は [README](../README.md) を参照。
+`folio-agent-init` の引数と、init を使わず手で設定する場合の各パッケージの API 詳細。導入の全体像は [README](../README.md) を参照。
+
+## 0. Setup (`folio-agent-init`)
+
+```bash
+npx folio-agent-init [options]
+```
+
+対話は持たない。引数で渡した値だけを変え、渡さなかった値は既存の `folio-agent.config.json` のまま残す（初回は既定値）。`--dry-run` を付けると、書き込む内容を表示するだけで何も書かない。
+
+| 引数 | 内容 | 既定 |
+|---|---|---|
+| `--lang <ja\|en>` | UI・プロンプトの言語 | `ja` |
+| `--dist <dir>` | ビルド出力のディレクトリ | `dist` |
+| `--include <globs>` | 知識に含める URL グロブ（カンマ区切り） | `/**` |
+| `--zenn-dir <path>` / `--zenn-user <name\|url>` | Zenn 記事の取り込み。2つそろえて渡す。`--no-zenn` で外す | なし |
+| `--contact-url <url>` | API ルート雛形に入れる Contact ページの URL | なし |
+| `--theme <auto\|poimandres\|custom>` | 配色。`auto` はテーマ CSS を書かず、サイトの配色に合わせる | `auto` |
+| `--accent` / `--surface` / `--text <hex>` | `--theme custom` の3色。どれかを渡すと `custom` になる | なし |
+| `--api-route <path>` / `--no-api-route` | API ルート雛形の生成先。既存のファイルは上書きしない | 初回のみ `functions/api/chat.ts` |
+| `--dry-run` | 書き込まずに内容を表示する | |
+
+Gemini API キーは引数では受け取らない（シェルの履歴や会話ログに残るため）。環境変数 `GEMINI_API_KEY` が設定されていれば `.dev.vars` に書き、無ければ `.dev.vars` に手で書く。`.dev.vars` はキーの有無にかかわらず `.gitignore` に追加する。
+
+`--theme auto` に戻すと、以前に書いた `folio-agent.theme.css` は削除する。
 
 ## 1. Knowledge Generation (build time)
 
@@ -20,7 +44,7 @@ npx folio-agent-ingest folio-agent.config.json knowledge.json
 }
 ```
 
-`IngestConfig`（`distDir` / `include` / `exclude` / `knowledgeDir` / `zenn` / `tokenWarningThreshold`）は `@folio-agent/handler` から型で公開されている。`language` と `theme` は `folio-agent-init` がウィザードの回答を保持するためのフィールドで、ingest 自体は読まない。`knowledgeDir` に置いた Markdown は URL パスをミラーした構造で、include/exclude の対象外（明示配置したものだけが入る）。
+`IngestConfig`（`distDir` / `include` / `exclude` / `knowledgeDir` / `zenn` / `tokenWarningThreshold`）は `@folio-agent/handler` から型で公開されている。`language` と `theme` は `folio-agent-init` が前回の値を保持するためのフィールドで、ingest 自体は読まない。init は、自分が扱わないフィールド（`exclude` / `knowledgeDir` / `zennSnapshotPath` など）を書き換えない。`knowledgeDir` に置いた Markdown は URL パスをミラーした構造で、include/exclude の対象外（明示配置したものだけが入る）。
 
 Zenn 記事も知識に含める場合は `zenn` を指定する（省略すればスキップ）。zenn.dev への通信は行わず、Zenn CLI の `articles/` ディレクトリをローカルで読み、frontmatter が `published: true` の記事だけを取り込む:
 

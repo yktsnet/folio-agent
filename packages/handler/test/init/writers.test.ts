@@ -10,12 +10,12 @@ import {
   resolveThemeCssPath,
   upsertDevVar,
 } from "../../src/init/writers.js";
-import type { WizardAnswers } from "../../src/init/questions.js";
+import type { InitAnswers } from "../../src/init/options.js";
 import type { IngestConfig } from "../../src/ingest/types.js";
 
 const THEME = { accent: "#2563eb", surface: "#ffffff", text: "#111827" };
 
-function makeAnswers(overrides: Partial<WizardAnswers> = {}): WizardAnswers {
+function makeAnswers(overrides: Partial<InitAnswers> = {}): InitAnswers {
   return {
     language: "ja",
     distDir: "dist",
@@ -44,19 +44,21 @@ describe("buildConfigJson", () => {
     expect(config.zenn).toEqual({ articlesDir: "../zenn-content/articles", baseUrl: "https://zenn.dev/foo/articles" });
   });
 
-  it("preserves fields the wizard never asks about, from the previous config", () => {
+  it("preserves fields init never manages, from the previous config", () => {
     const previous: IngestConfig = {
       distDir: "old-dist",
       include: ["/old/**"],
       exclude: ["/old/draft-*"],
       knowledgeDir: "knowledge",
       tokenWarningThreshold: 50000,
+      zennSnapshotPath: "zenn-snapshot.json",
     };
     const config = buildConfigJson(makeAnswers(), previous);
+    expect(config.zennSnapshotPath).toBe("zenn-snapshot.json");
     expect(config.exclude).toEqual(["/old/draft-*"]);
     expect(config.knowledgeDir).toBe("knowledge");
     expect(config.tokenWarningThreshold).toBe(50000);
-    // answers still win for fields the wizard does ask about
+    // answers still win for fields init manages
     expect(config.distDir).toBe("dist");
     expect(config.include).toEqual(["/**"]);
   });
@@ -69,6 +71,12 @@ describe("buildConfigJson", () => {
     };
     const config = buildConfigJson(makeAnswers(), previous);
     expect(config.zenn).toBeUndefined();
+  });
+
+  it("drops theme when the answers are auto (no theme)", () => {
+    const previous: IngestConfig = { distDir: "dist", include: ["/**"], theme: THEME };
+    const config = buildConfigJson(makeAnswers({ theme: undefined }), previous);
+    expect(config.theme).toBeUndefined();
   });
 });
 
