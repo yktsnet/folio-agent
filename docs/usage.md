@@ -95,6 +95,18 @@ D1 スキーマは `packages/handler/migrations/0001_init.sql` を `wrangler d1 
 </script>
 ```
 
-- `lang="en"` を付けると UI 文言（プレースホルダ・送信ボタン・開示文・エラー文）が英語になる。未指定は日本語。
+- `lang="en"` を付けると UI 文言（ボタン・見出し・案内文・質問候補・プレースホルダ・開示文・エラー文）が英語になる。未指定は日本語。
+- パネルの見出し・冒頭の案内文・質問候補は属性で差し替えられる。`heading="…"`、`greeting="…"`、`suggestions="質問1|質問2|質問3"`（`|` 区切り）。`greeting=""` / `suggestions=""` で非表示にできる。未指定なら言語ごとの既定文言を出す。
 - `policy-href` の指し先ページには、①IPベースのレート制限（10分3問・日次10回）を行っていること、②入力内容と応答を D1 にログとして記録していること、③生成に使う Gemini API の無料枠は入力が学習に利用され得ることの3点を書く。ページ自体は導入サイト側の責務（folio-agent はテンプレートを同梱しない）。
 - 配色・フォントは CSS カスタムプロパティ6トークン（`--folio-agent-surface` / `text` / `muted` / `accent` / `accent-contrast` / `font`）で上書きできる。**未指定でもホストの配色（`color` / `color-scheme` 継承とCSSシステムカラー）から既定値を導出するため、サイトのライト/ダークどちらにも自然に馴染む**。変えたい場合のみ、上記トークンを上書きする。
+- 配色を変える場合も、決めるのは `surface` / `text` / `accent` の3色で足りる。境界線・吹き出し・入力欄・補助テキストはこの3色から導出する（`muted` / `accent-contrast` は導出値を変えたいときだけ指定する）。例として Poimandres 配色:
+
+  ```css
+  folio-agent-widget {
+    --folio-agent-surface: #1b1e28;
+    --folio-agent-text: #e4f0fb;
+    --folio-agent-accent: #5de4c7;
+  }
+  ```
+
+- 幅 640px 以下では全画面で開き、画面キーボードが出ても入力欄が隠れないよう表示領域（`visualViewport`）の高さに追従する。

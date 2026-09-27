@@ -18,6 +18,6 @@ npm install @folio-agent/widget
 </script>
 ```
 
-配色・フォントは CSS カスタムプロパティ6トークン（`--folio-agent-surface` / `text` / `muted` / `accent` / `accent-contrast` / `font`）で上書きできる。未指定時は既定デザインのまま動く。
+配色・フォントは CSS カスタムプロパティ6トークン（`--folio-agent-surface` / `text` / `muted` / `accent` / `accent-contrast` / `font`）で上書きできる。未指定時はホストの配色に合わせる。変える場合も `surface` / `text` / `accent` の3色で足り、残りはこの3色から導出する。
 
-UI 文言は `lang="en"` 属性で英語に切り替えられる（未指定は日本語）。
+UI 文言は `lang="en"` 属性で英語に切り替えられる（未指定は日本語）。パネルの見出し・案内文・質問候補は `heading` / `greeting` / `suggestions`（`|` 区切り）属性で差し替えられる。
