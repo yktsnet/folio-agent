@@ -86,6 +86,18 @@ describe("folio-agent-init main (E2E)", () => {
     expect(existsSync(".dev.vars")).toBe(false);
   });
 
+  it("writes knowledge.json under distDir, and doesn't add a second ingest to a build script that already has one", async () => {
+    await main(["--dist", "dist/client"], {});
+    expect(JSON.parse(await readFile("package.json", "utf-8")).scripts.build).toBe(
+      "folio-agent-ingest folio-agent.config.json dist/client/knowledge.json",
+    );
+
+    const existing = "astro build && folio-agent-ingest folio-agent.config.json out/knowledge.json";
+    await writeFile("package.json", JSON.stringify({ scripts: { build: existing } }));
+    await main([], {});
+    expect(JSON.parse(await readFile("package.json", "utf-8")).scripts.build).toBe(existing);
+  });
+
   it("writes nothing with --dry-run", async () => {
     await main(["--dry-run", "--theme", "poimandres"], { GEMINI_API_KEY: "abc123" });
 

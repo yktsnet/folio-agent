@@ -111,12 +111,16 @@ export function buildApiRouteTemplate(answers: ApiRouteAnswers): string {
   ].join("\n");
 }
 
-/** Appends the ingest command to a `build` script if it isn't already present; otherwise returns it unchanged. */
+/**
+ * Appends the ingest command to a `build` script unless it already runs ingest. Any existing
+ * `folio-agent-ingest` counts, whatever its arguments: sites often write to a different output
+ * path than the default, and appending a second run would ingest twice.
+ */
 export function appendIngestToBuildScript(buildScript: string | undefined, configPath: string, knowledgeOutputPath: string): string {
   const ingestCommand = `${INGEST_COMMAND_PREFIX} ${configPath} ${knowledgeOutputPath}`;
   const base = (buildScript ?? "").trim();
 
-  if (base.includes(ingestCommand)) {
+  if (base.includes(INGEST_COMMAND_PREFIX)) {
     return base;
   }
 
