@@ -1,3 +1,11 @@
+export interface AnswerViolationRow {
+  created_at: string;
+  route: string;
+  attempt: number;
+  kinds: string;
+  answer: string;
+}
+
 interface ChatLogRow {
   id: number;
   created_at: string;
@@ -10,13 +18,16 @@ interface ChatLogRow {
 
 /**
  * Minimal in-memory stand-in for D1Database, covering only what chat_logs
- * queries in this package need (INSERT + COUNT(*) with ip/created_at/over_limit filters).
+ * queries in this package need (INSERT + COUNT(*) with ip/created_at/over_limit filters), plus
+ * INSERT INTO answer_violations, whose rows are exposed as `answerViolations` for assertions.
  */
 export function createFakeD1(): D1Database {
   const rows: ChatLogRow[] = [];
+  const answerViolations: AnswerViolationRow[] = [];
   let nextId = 1;
 
   const fake = {
+    answerViolations,
     prepare(query: string) {
       let boundArgs: unknown[] = [];
       const statement = {
@@ -43,6 +54,11 @@ export function createFakeD1(): D1Database {
               response,
               over_limit: overLimit,
             });
+            return { success: true } as unknown as D1Result;
+          }
+          if (query.startsWith("INSERT INTO answer_violations")) {
+            const [createdAt, route, attempt, kinds, answer] = boundArgs as [string, string, number, string, string];
+            answerViolations.push({ created_at: createdAt, route, attempt, kinds, answer });
             return { success: true } as unknown as D1Result;
           }
           throw new Error(`fake D1: unsupported run() query: ${query}`);

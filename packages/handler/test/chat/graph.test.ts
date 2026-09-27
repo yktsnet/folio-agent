@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { findAnswerFormatViolations } from "../../src/chat/answer/contract.js";
 import { buildChatGraph } from "../../src/chat/graph.js";
 import type { ChatGraphDeps } from "../../src/chat/types.js";
 
@@ -23,7 +24,7 @@ describe("buildChatGraph", () => {
 
     expect(result.route).toBe("works");
     expect(result.answer).toBe("generated answer");
-    expect(deps.generateAnswer).toHaveBeenCalledWith("Worksについて教えて", "works");
+    expect(deps.generateAnswer).toHaveBeenCalledWith("Worksについて教えて", "works", undefined);
     expect(deps.logChat).toHaveBeenCalledWith({
       ip: "1.2.3.4",
       route: "works",
@@ -33,18 +34,69 @@ describe("buildChatGraph", () => {
     });
   });
 
-  it("normalizes the generated answer before returning and logging it", async () => {
+  it("returns a compliant answer as is, generating only once", async () => {
+    const deps = makeDeps({ logAnswerViolation: vi.fn() });
+    const graph = buildChatGraph(deps);
+
+    const result = await graph.invoke({ input: "Worksについて教えて", ip: "1.2.3.4" });
+
+    expect(result.answer).toBe("generated answer");
+    expect(deps.generateAnswer).toHaveBeenCalledTimes(1);
+    expect(deps.logAnswerViolation).not.toHaveBeenCalled();
+  });
+
+  it("points out a format violation and has the model correct it once", async () => {
+    const generateAnswer = vi
+      .fn()
+      .mockResolvedValueOnce("詳細は [Works](/) にあります。")
+      .mockResolvedValueOnce("詳細は Works ページにあります。");
+    const deps = makeDeps({ generateAnswer, logAnswerViolation: vi.fn().mockResolvedValue(undefined) });
+    const graph = buildChatGraph(deps);
+
+    const result = await graph.invoke({ input: "Worksについて教えて", ip: "1.2.3.4" });
+
+    expect(result.answer).toBe("詳細は Works ページにあります。");
+    expect(generateAnswer).toHaveBeenCalledTimes(2);
+    const correction = generateAnswer.mock.calls[1][2];
+    expect(correction.previousAnswer).toBe("詳細は [Works](/) にあります。");
+    expect(correction.request).toContain("[Works](/)");
+    expect(deps.logAnswerViolation).toHaveBeenCalledWith({
+      route: "works",
+      attempt: 1,
+      kinds: ["disallowed_link"],
+      answer: "詳細は [Works](/) にあります。",
+    });
+    expect(deps.logChat).toHaveBeenCalledWith(expect.objectContaining({ response: "詳細は Works ページにあります。" }));
+  });
+
+  it("falls back to plain text when the corrected answer still breaks the format, without asking a third time", async () => {
+    const generateAnswer = vi.fn().mockResolvedValue("**実績**は[About](https://example.com/about)です");
     const deps = makeDeps({
-      generateAnswer: vi.fn().mockResolvedValue("**実績**は[記事](https://zenn.dev/foo/a)と[About](https://example.com/about)です"),
+      generateAnswer,
+      logAnswerViolation: vi.fn().mockResolvedValue(undefined),
       answerLinks: [{ url: "https://zenn.dev/foo/a", title: "記事" }],
     });
     const graph = buildChatGraph(deps);
 
     const result = await graph.invoke({ input: "Worksについて教えて", ip: "1.2.3.4" });
 
-    const normalized = "実績は[記事](https://zenn.dev/foo/a)とAboutです";
-    expect(result.answer).toBe(normalized);
-    expect(deps.logChat).toHaveBeenCalledWith(expect.objectContaining({ response: normalized }));
+    expect(generateAnswer).toHaveBeenCalledTimes(2);
+    expect(result.answer).toBe("実績はAboutです");
+    expect(findAnswerFormatViolations(result.answer, deps.answerLinks!)).toEqual([]);
+    expect(vi.mocked(deps.logAnswerViolation!).mock.calls.map(([entry]) => entry.attempt)).toEqual([1, 2]);
+    expect(deps.logChat).toHaveBeenCalledWith(expect.objectContaining({ response: "実績はAboutです" }));
+  });
+
+  it("still answers when recording a violation fails", async () => {
+    const deps = makeDeps({
+      generateAnswer: vi.fn().mockResolvedValueOnce("[Works](/)").mockResolvedValueOnce("Works ページです"),
+      logAnswerViolation: vi.fn().mockRejectedValue(new Error("no such table: answer_violations")),
+    });
+    const graph = buildChatGraph(deps);
+
+    const result = await graph.invoke({ input: "Worksについて教えて", ip: "1.2.3.4" });
+
+    expect(result.answer).toBe("Works ページです");
   });
 
   it("falls back to a canned answer (never a raw error) when generation fails", async () => {
@@ -81,7 +133,7 @@ describe("buildChatGraph", () => {
       const result = await graph.invoke({ input: "I'd like to hire you", ip: "1.2.3.4" });
 
       expect(result.route).toBe("inquiry");
-      expect(deps.generateAnswer).toHaveBeenCalledWith("I'd like to hire you", "inquiry");
+      expect(deps.generateAnswer).toHaveBeenCalledWith("I'd like to hire you", "inquiry", undefined);
     });
 
     it("falls back to an English canned answer when generation fails", async () => {

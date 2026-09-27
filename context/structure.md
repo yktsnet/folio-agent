@@ -23,7 +23,7 @@ folio-agent/
 │   │   │   │   └── writers.ts        # 値 → config JSON / theme CSS / APIルート雛形 / build script / .dev.vars の生成
 │   │   │   └── chat/         # チャットハンドラ（実行時・Workers で動く）
 │   │   │       ├── handler.ts        # createChatHandler: Request→Response（入力検証・IP取得）
-│   │   │       ├── graph.ts          # LangGraph StateGraph（input_guard → route → generate → normalize_answer → log）
+│   │   │       ├── graph.ts          # LangGraph StateGraph（input_guard → route → generate → check_answer →（作り直し / fallback）→ log）
 │   │   │       ├── route.ts          # キーワードによる経路分類（thoughts / works / inquiry）
 │   │   │       ├── gemini.ts         # Gemini 呼び出しだけ
 │   │   │       ├── prompt/           # システムプロンプト（言語別の文面）。LLM に形式を「頼む」側
@@ -31,14 +31,16 @@ folio-agent/
 │   │   │       │   ├── persona.ts        # 役割・口調・長さ
 │   │   │       │   ├── grounding.ts      # 知識だけで答える・創作しない
 │   │   │       │   ├── answer-format.ts  # 回答の形式の指示
-│   │   │       │   └── routes.ts         # 経路ごとの指示
-│   │   │       ├── answer/           # 回答の形式を「保証する」側（生成の後ろでコードが直す）
-│   │   │       │   ├── normalize.ts      # normalizeAnswer（graph の normalize_answer ノードが呼ぶ）
+│   │   │       │   ├── routes.ts         # 経路ごとの指示
+│   │   │       │   └── correction.ts     # 違反を指摘して作り直させる文面
+│   │   │       ├── answer/           # 回答の形式を「検査する」側（生成の後ろでコードが照らす）
+│   │   │       │   ├── contract.ts       # 回答の形式の定義と違反の検出（check_answer ノードが使う）
+│   │   │       │   ├── fallback.ts       # 作り直しても違反したときの最後の保険（文字だけにする）
 │   │   │       │   └── links.ts          # AnswerLink / collectAnswerLinks（回答に残してよいリンク）
 │   │   │       ├── rate-limit.ts     # chat_logs の COUNT による 10分/日次 制限
 │   │   │       ├── log.ts            # chat_logs への INSERT
 │   │   │       └── types.ts
-│   │   ├── migrations/       # D1 スキーマ（chat_logs）
+│   │   ├── migrations/       # D1 スキーマ（chat_logs / answer_violations）
 │   │   ├── dev/              # 手動検証ハーネス（npm 配布外）。wrangler dev + D1 local
 │   │   └── test/             # src/ をミラー。fake-d1.ts で D1 を偽装
 │   └── widget/               # @folio-agent/widget

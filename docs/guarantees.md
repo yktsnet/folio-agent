@@ -11,7 +11,7 @@
 - 渡されたknowledge文字列をプロンプトに埋め込む
 - route別に異なる指示文を出す
 - inquiry routeでcontactUrl指定時はプロンプトに埋め込み、未指定時は既定の問い合わせ案内文言を使う
-- thoughts/worksrouteではcontactUrlを無視する
+- contactUrl指定時は、どのrouteでもContactへのリンクの書き方の見本（`[Contactページ](URL)`）を含める
 - language="en"指定時、上記の各保証が英語で提供され、日本語語彙が混入しない
 
 | 保証（要約） | 対応テスト |
@@ -23,13 +23,16 @@
 | knowledgeの埋め込み | `embeds the knowledge for %s` |
 | route別の指示切替 | `switches route-specific instructions per route` |
 | inquiryのcontactUrl扱い（指定時／未指定時） | `embeds contactUrl into the inquiry instruction when provided` / `keeps the existing inquiry wording when contactUrl is not provided` |
-| thoughts/worksでのcontactUrl無視 | `ignores contactUrl for thoughts and works routes` |
+| Contactリンクの見本（全route） | `gives the Contact link as an example to copy on every route when contactUrl is provided, for %s` / `gives the Contact link example in English` |
 | 英語版での上記保証・日本語語彙の非混入 | `describe("language: en")` 配下の全テスト |
 
 ### 2. `packages/handler/test/chat/graph.test.ts` — packages/handler/src/chat/graph.ts (buildChatGraph)
 
 - レート制限内ならroute分類→生成→ログ記録まで一気通貫で実行する
-- 生成した回答は `normalize_answer` で回答の形式に直してから返し、ログにも直した後の回答を残す（リンク以外の Markdown を外し、`answerLinks` に無いリンクは文字にする）
+- 回答の形式に合う回答は、生成1回でそのまま返す
+- 回答の形式に違反した回答は、違反の箇所を添えて1回だけ作り直させ、作り直した回答を返してログに残す。違反は `logAnswerViolation` に記録する
+- 作り直しても違反した回答は、3回目を呼ばずに文字だけにして返す（返す回答は必ず回答の形式に合う）
+- 違反の記録に失敗しても回答は返す
 - 生成失敗時は生の例外を出さず、固定のフォールバック文言を返しログに残す
 - レート制限超過時は生成をスキップし、route="rate_limited"・固定の上限文言でログに残す
 - language="en"で英語メッセージの分類・生成・フォールバック・上限文言が英語になる
@@ -37,7 +40,10 @@
 | 保証（要約） | 対応テスト |
 |---|---|
 | 正常系の一気通貫実行 | `routes, generates, and logs when under the rate limit` |
-| 回答の形式への矯正 | `normalizes the generated answer before returning and logging it` |
+| 形式に合う回答はそのまま | `returns a compliant answer as is, generating only once` |
+| 違反の指摘と1回の作り直し | `points out a format violation and has the model correct it once` |
+| 作り直しても違反なら文字だけに | `falls back to plain text when the corrected answer still breaks the format, without asking a third time` |
+| 記録の失敗で止めない | `still answers when recording a violation fails` |
 | 生成失敗時のフォールバック | `falls back to a canned answer (never a raw error) when generation fails` |
 | レート制限超過時のスキップ | `short-circuits to a canned answer and skips generation when rate-limited` |
 | 英語版の分類・生成・フォールバック・上限文言 | `describe("language: en")` 配下の全テスト |
@@ -50,6 +56,7 @@
 - 同一IPからの連続リクエストにレート制限を適用し、超過時は200のままroute="rate_limited"を返す
 - `message`が1000字を超える場合、400を返す
 - `CF-Connecting-IP`ヘッダが無いリクエストでも例外を投げず処理を継続する（IPは`"unknown"`として扱われる）
+- 回答の形式に違反した回答を D1 の `answer_violations` に記録し、訪問者の入力は記録しない
 
 | 保証（要約） | 対応テスト |
 |---|---|
@@ -58,6 +65,7 @@
 | 非JSONボディの拒否 | `rejects a non-JSON body with 400` |
 | レート制限の適用 | `enforces the rate limit across requests from the same IP` |
 | 1000字超のメッセージの拒否 | `rejects a message over 1000 characters with 400` |
+| 違反の記録（訪問者の入力なし） | `records answers that broke the answer format in answer_violations, without the visitor's message` |
 | CF-Connecting-IP無しでも継続 | `treats a request without CF-Connecting-IP as ip "unknown" without throwing` |
 
 ### 4. `packages/handler/test/chat/rate-limit.test.ts` — packages/handler/src/chat/rate-limit.ts (checkRateLimit / DEFAULT_RATE_LIMIT_CONFIG)
@@ -234,11 +242,15 @@
 
 ### 14. `packages/handler/test/ingest/format.test.ts` — packages/handler/src/ingest/format.ts (formatKnowledge)
 
-- 各ページのタイトル・URL・本文を、空行で区切ってプロンプト用の知識文字列にする
+- このサイトの外のページ（`http(s)://`）はタイトル・URL・本文で、このサイトのページは名前と本文だけ（URL なし・「このサイトのページ」の目印付き）で知識文字列にする
+- このサイトのページのタイトルに共通するサイト名の接尾辞を外す（1ページにしかない接尾辞は外さない）
+- language="en" では目印を英語にする
 
 | 保証（要約） | 対応テスト |
 |---|---|
-| タイトル・URL・本文の整形 | `writes each page's title, URL and text, separated by blank lines` |
+| 外部ページとサイトのページの書き分け | `gives external pages their title and URL, and this site's pages only their name` |
+| サイト名の接尾辞の除去 | `drops the site-name suffix shared by this site's page titles` / `keeps a suffix that appears on only one page, since it may be part of that title` |
+| 英語の目印 | `labels this site's pages in English with language en` |
 
 ### 15. `packages/handler/test/chat/answer/links.test.ts` — packages/handler/src/chat/answer/links.ts (collectAnswerLinks)
 
@@ -249,6 +261,16 @@
 |---|---|
 | 外部ページと Contact の収集 | `lists external pages from the knowledge and the Contact page, leaving this site's pages out` |
 | Contact の表示名と省略 | `titles the Contact page in English with language en, and omits it without a contactUrl` |
+
+### 16. `packages/handler/test/chat/gemini.test.ts` — packages/handler/src/chat/gemini.ts (createGeminiGenerator)
+
+- 初回は訪問者の入力だけを送る
+- 作り直しでは、元の質問・直前の回答・指摘を会話として送る
+
+| 保証（要約） | 対応テスト |
+|---|---|
+| 初回の送信内容 | `sends the visitor's message alone on the first attempt` |
+| 作り直しの会話 | `sends the question, the previous answer and the correction request as a conversation when correcting` |
 
 ## About
 

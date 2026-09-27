@@ -25,7 +25,7 @@ describe("buildSystemPrompt", () => {
   it.each(ROUTES)("asks for [text](URL) links and names this site's pages instead of linking them, for %s", (route) => {
     const prompt = buildSystemPrompt("knowledge body", route);
     expect(prompt).toContain("[表示する文字](URL) の形");
-    expect(prompt).toContain("このサイト内のページはリンクにせず");
+    expect(prompt).toContain("（このサイトのページ）」と付いたページはリンクにせず");
   });
 
   it.each(ROUTES)("embeds the knowledge for %s", (route) => {
@@ -57,13 +57,10 @@ describe("buildSystemPrompt", () => {
     expect(inquiry).toContain("Contactページへの問い合わせを案内してください。");
   });
 
-  it("ignores contactUrl for thoughts and works routes", () => {
-    const contactUrl = "https://example.com/contact";
-    const thoughts = buildSystemPrompt("knowledge body", "thoughts", contactUrl);
-    const works = buildSystemPrompt("knowledge body", "works", contactUrl);
-
-    expect(thoughts).not.toContain(contactUrl);
-    expect(works).not.toContain(contactUrl);
+  it.each(ROUTES)("gives the Contact link as an example to copy on every route when contactUrl is provided, for %s", (route) => {
+    const prompt = buildSystemPrompt("knowledge body", route, "https://example.com/contact");
+    expect(prompt).toContain("次の書き方をそのまま使ってください: [Contactページ](https://example.com/contact)");
+    expect(buildSystemPrompt("knowledge body", route)).not.toContain("[Contactページ](");
   });
 
   describe("language: en", () => {
@@ -82,7 +79,7 @@ describe("buildSystemPrompt", () => {
     it.each(ROUTES)("asks for [text](URL) links in English for %s", (route) => {
       const prompt = buildSystemPrompt("knowledge body", route, undefined, "en");
       expect(prompt).toContain("write them as [text to show](URL)");
-      expect(prompt).toContain("refer to this site's pages by name");
+      expect(prompt).toContain('pages marked "(a page on this site)" in the knowledge by name');
     });
 
     it("switches route-specific instructions per route in English", () => {
@@ -101,6 +98,11 @@ describe("buildSystemPrompt", () => {
       const inquiry = buildSystemPrompt("knowledge body", "inquiry", "https://example.com/contact", "en");
       expect(inquiry).toContain("https://example.com/contact");
       expect(inquiry).toContain("Contact page");
+    });
+
+    it("gives the Contact link example in English", () => {
+      const prompt = buildSystemPrompt("knowledge body", "thoughts", "https://example.com/contact", "en");
+      expect(prompt).toContain("write it exactly like this: [Contact page](https://example.com/contact)");
     });
 
     it("does not leak Japanese wording into English prompts", () => {

@@ -1,5 +1,5 @@
 // handler が返す回答の形式（プレーンテキスト、記法はリンクの [表示する文字](http(s)://…) だけ）を描く。
-// HTML は解釈せず、テキストノードと <a> を組み立てる。形式を守らせるのは handler の normalize_answer で、
+// HTML は解釈せず、テキストノードと <a> を組み立てる。形式を守らせるのは handler の check_answer で、
 // ここでは古い handler が URL をそのまま返した場合にだけ、その URL をリンクにする。
 const TOKEN = /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|https?:\/\/[^\s<>"'（）「」『』【】、。]+/g;
 const TRAILING_PUNCTUATION = /[.,;:!?)\]]+$/;
