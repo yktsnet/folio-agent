@@ -51,6 +51,14 @@ export interface KnowledgePage {
   text: string;
 }
 
+/**
+ * The part of a knowledge document that answering needs. A `knowledge.json` imported as JSON
+ * types `source` as a plain string, so helpers take this rather than `KnowledgeDocument`.
+ */
+export interface KnowledgePagesLike {
+  pages: ReadonlyArray<Pick<KnowledgePage, "url" | "title" | "text">>;
+}
+
 export interface KnowledgeDocument {
   generatedAt: string;
   pages: KnowledgePage[];

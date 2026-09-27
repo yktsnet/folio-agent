@@ -15,6 +15,7 @@ folio-agent/
 │   │   │   │   ├── file-to-url.ts    # dist のファイルパス → URL パス変換
 │   │   │   │   ├── html-to-text.ts   # HTML → テキスト抽出（node-html-parser）
 │   │   │   │   ├── token-count.ts    # トークン量の概算・上限警告
+│   │   │   │   ├── format.ts         # formatKnowledge（知識をタイトル・URL 付きでプロンプト用に整形）
 │   │   │   │   └── types.ts          # IngestConfig / KnowledgeDocument など
 │   │   │   ├── init/         # セットアップ CLI（Node で実行。引数のみで対話なし）
 │   │   │   │   ├── cli.ts            # bin: folio-agent-init（計画の表示と書き込み）
@@ -32,7 +33,8 @@ folio-agent/
 │   │   │       │   ├── answer-format.ts  # 回答の形式の指示
 │   │   │       │   └── routes.ts         # 経路ごとの指示
 │   │   │       ├── answer/           # 回答の形式を「保証する」側（生成の後ろでコードが直す）
-│   │   │       │   └── normalize.ts      # normalizeAnswer（graph の normalize_answer ノードが呼ぶ）
+│   │   │       │   ├── normalize.ts      # normalizeAnswer（graph の normalize_answer ノードが呼ぶ）
+│   │   │       │   └── links.ts          # AnswerLink / collectAnswerLinks（回答に残してよいリンク）
 │   │   │       ├── rate-limit.ts     # chat_logs の COUNT による 10分/日次 制限
 │   │   │       ├── log.ts            # chat_logs への INSERT
 │   │   │       └── types.ts
@@ -42,6 +44,7 @@ folio-agent/
 │   └── widget/               # @folio-agent/widget
 │       ├── src/
 │       │   ├── widget-element.ts  # <folio-agent-widget> Web Component（Shadow DOM）
+│       │   ├── answer.ts          # 回答の形式を DOM に描く（リンクだけ <a> にする）
 │       │   ├── styles.ts          # ウィジェット CSS（文字列定数）
 │       │   ├── index.ts           # defineFolioAgentWidget エクスポート
 │       │   └── types.ts

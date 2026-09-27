@@ -13,6 +13,8 @@ LLM output is probabilistic; nothing guarantees the format a prompt asks for. Wh
 3. **Check and correct** (`chat/answer/`, the `normalize_answer` node in the graph): after generation, code brings the answer into the format agreed between handler and widget. This is where the guarantee lives
 4. **Render** (widget): draws only that format. No HTML is parsed
 
+The answer format: plain text, paragraphs separated by blank lines, and one notation only, links as `[text to show](http(s)://…)`, pointing only to `answerLinks` (pages outside this site that are in the knowledge, plus Contact). This site's own pages are named rather than linked, since the visitor is already on the site. `normalize_answer` reduces disallowed links and bare URLs to text (an allowed bare URL becomes a link titled from `answerLinks`). For links, this turns the existing rule "never invent what the knowledge doesn't say" into something code enforces.
+
 Checking lives in the handler rather than the widget because only the handler knows which references are allowed (URLs in the knowledge, the Contact URL). It is a graph node so that a deterministic stage between generation and logging stays in place as rules are added. It is the same idea as the author's [order-system-rag](https://github.com/yktsnet/order-system-rag), which checks model-generated SQL deterministically before running it: code always stands behind the model.
 
 ## Why CAG
@@ -49,7 +51,7 @@ It reuses `COUNT` on `chat_logs` as the counter instead of adding another mechan
 
 ## Why the widget is hand-written
 
-Off-the-shelf chat widgets are heavy and hard to hold to "assert nothing until clicked" (no auto-popup, no first-message bubble, no network before the first click). Theming comes in through CSS custom properties (a standard mechanism inherited from the host even through Shadow DOM; the integrating side needs a few lines of global CSS, and defaults apply if unset). Answers are plain text only; the weight of a Markdown renderer and its XSS surface are not worth it for short reception answers.
+Off-the-shelf chat widgets are heavy and hard to hold to "assert nothing until clicked" (no auto-popup, no first-message bubble, no network before the first click). Theming comes in through CSS custom properties (a standard mechanism inherited from the host even through Shadow DOM; the integrating side needs a few lines of global CSS, and defaults apply if unset). Answers are plain text only; the weight of a Markdown renderer and its XSS surface are not worth it for short reception answers. The one exception is links as `[text to show](URL)`, drawn from text nodes and `<a>` elements (no HTML is parsed).
 
 ## Why routing is deterministic keyword branching
 

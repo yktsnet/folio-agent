@@ -1,3 +1,4 @@
+import type { AnswerLink } from "./answer/links.js";
 import { buildChatGraph } from "./graph.js";
 import { logChat } from "./log.js";
 import { checkRateLimit } from "./rate-limit.js";
@@ -12,6 +13,11 @@ export interface ChatHandlerConfig {
   generateAnswer: GenerateAnswerFn;
   rateLimitConfig?: RateLimitConfig;
   language?: Language;
+  /**
+   * What answers may link to, usually `collectAnswerLinks(knowledgeDoc, contactUrl)`. When omitted,
+   * every link in an answer is reduced to its text.
+   */
+  answerLinks?: AnswerLink[];
 }
 
 export function createChatHandler(config: ChatHandlerConfig): (request: Request) => Promise<Response> {
@@ -22,6 +28,7 @@ export function createChatHandler(config: ChatHandlerConfig): (request: Request)
     logChat: (entry) => logChat(config.db, entry),
     rateLimitConfig,
     language: config.language,
+    answerLinks: config.answerLinks,
   });
 
   return async (request: Request): Promise<Response> => {

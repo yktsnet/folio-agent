@@ -1,3 +1,5 @@
+import type { AnswerLink } from "./answer/links.js";
+
 export type ChatRoute = "thoughts" | "works" | "inquiry" | "rate_limited";
 
 export type Language = "ja" | "en";
@@ -39,4 +41,6 @@ export interface ChatGraphDeps {
   logChat: (entry: ChatLogEntry) => Promise<void>;
   rateLimitConfig: RateLimitConfig;
   language?: Language;
+  /** What answers may link to. Links to anything else are reduced to their text. */
+  answerLinks?: AnswerLink[];
 }

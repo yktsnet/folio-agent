@@ -22,6 +22,12 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("2〜4文ごとに空行");
   });
 
+  it.each(ROUTES)("asks for [text](URL) links and names this site's pages instead of linking them, for %s", (route) => {
+    const prompt = buildSystemPrompt("knowledge body", route);
+    expect(prompt).toContain("[表示する文字](URL) の形");
+    expect(prompt).toContain("このサイト内のページはリンクにせず");
+  });
+
   it.each(ROUTES)("embeds the knowledge for %s", (route) => {
     const prompt = buildSystemPrompt("knowledge body", route);
     expect(prompt).toContain("knowledge body");
@@ -71,6 +77,12 @@ describe("buildSystemPrompt", () => {
       const prompt = buildSystemPrompt("knowledge body", route, undefined, "en");
       expect(prompt).toContain("Markdown formatting");
       expect(prompt).toContain("plain text");
+    });
+
+    it.each(ROUTES)("asks for [text](URL) links in English for %s", (route) => {
+      const prompt = buildSystemPrompt("knowledge body", route, undefined, "en");
+      expect(prompt).toContain("write them as [text to show](URL)");
+      expect(prompt).toContain("refer to this site's pages by name");
     });
 
     it("switches route-specific instructions per route in English", () => {
