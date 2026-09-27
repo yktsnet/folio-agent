@@ -61,7 +61,7 @@ The widget makes no network request until it is clicked. Its colors follow the s
 | Flow | LangGraph.js (`StateGraph` only) | Expresses the guard → route → generate → check → (regenerate) → log branching and loop declaratively |
 | Knowledge | CAG (no search) | For one site's worth of knowledge, a vector search stack is overkill |
 | Knowledge selection | dist traversal + URL globs (`picomatch`) | No crawling; users only need to know their own site's URLs |
-| Generation | Gemini API (default `gemini-3.1-flash-lite`) | A free tier that keeps an always-on bot at zero cost |
+| Generation | Gemini API (default `gemini-3.5-flash-lite`) | A free tier that keeps an always-on bot at zero cost; the newest model whose free-tier quota (500 requests a day) is enough for a receptionist |
 | Frontend | Web Components (Shadow DOM) | Works with any framework, with no CSS collisions |
 
 ## Design Decisions
@@ -99,7 +99,7 @@ npm test
 npm run build
 ```
 
-To exercise D1 and Gemini for real, use the dev harness in `packages/handler/dev/README.md`. The release procedure is in [docs/release.en.md](docs/release.en.md).
+To exercise D1 and Gemini for real, use the dev harness in `packages/handler/dev/README.md`. Whether the model's answers keep the answer format is checked against the real Gemini with `npm run eval -- --knowledge <knowledge.json> --question "…"` (the key is read from `packages/handler/dev/.dev.vars`). The release procedure is in [docs/release.en.md](docs/release.en.md).
 
 ## License
 

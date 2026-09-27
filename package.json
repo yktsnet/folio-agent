@@ -11,7 +11,8 @@
     "build": "tsc -b",
     "typecheck": "tsc -b --force",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "eval": "tsc -b && node scripts/eval.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
