@@ -55,11 +55,13 @@ git tag v<x.y.z> && git push origin v<x.y.z>
 ```bash
 gh run list --workflow release.yml --limit 1
 gh run watch <run-id> --exit-status
-npm view @folio-agent/handler version
-npm view @folio-agent/widget version
+npm view @folio-agent/handler@<x.y.z> version --prefer-online
+npm view @folio-agent/widget@<x.y.z> version --prefer-online
+gh release view v<x.y.z>
 ```
 
-両方が `<x.y.z>` になったら完了。1 で挙げた「利用側で必要な対応」を添えて、利用サイトの更新へ進めることを伝える。
+`npm view <pkg> version` は公開直後しばらく前の版を返すことがあるので、版を指定して `--prefer-online` で引く。
+2パッケージが `<x.y.z>` を返し、GitHub Release（ワークフローが自動生成する）が Latest になっていれば完了。1 で挙げた「利用側で必要な対応」を添えて、利用サイトの更新へ進めることを伝える。
 
 ## 失敗したとき
 
@@ -68,3 +70,4 @@ npm view @folio-agent/widget version
 - `ENEEDAUTH`: npmjs.com の Trusted Publisher 登録が無い（`docs/release.md` の初回手順）
 - typecheck / test で落ちた: main 自体が壊れている。リリースを止め、修正の PR を先に出す
 - 片方のパッケージだけ公開された: 同じバージョンは再公開できない。patch を上げて出し直す
+- publish は通ったが GitHub Release が無い: `gh release create v<x.y.z> --verify-tag --generate-notes --latest` で作る
