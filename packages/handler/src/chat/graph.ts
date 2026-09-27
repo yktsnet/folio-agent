@@ -51,7 +51,7 @@ export function buildChatGraph(deps: ChatGraphDeps) {
         return { answer: GENERATION_FAILED_MESSAGE[language] };
       }
     })
-    .addNode("normalize_answer", async (state) => ({ answer: normalizeAnswer(state.answer ?? "") }))
+    .addNode("normalize_answer", async (state) => ({ answer: normalizeAnswer(state.answer ?? "", deps.answerLinks) }))
     .addNode("log", async (state) => {
       await deps.logChat({
         ip: state.ip,

@@ -188,6 +188,11 @@ export const WIDGET_STYLES = `
   .greeting {
     align-self: stretch;
   }
+  .message a {
+    color: inherit;
+    text-decoration-color: color-mix(in srgb, var(--_accent) 70%, transparent);
+    text-underline-offset: 2px;
+  }
   .message.user {
     align-self: flex-end;
     max-width: 85%;

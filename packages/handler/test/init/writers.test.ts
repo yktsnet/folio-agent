@@ -125,7 +125,16 @@ describe("buildApiRouteTemplate", () => {
       language: "ja",
       contactUrl: "https://example.com/contact",
     });
-    expect(output).toContain('contactUrl: "https://example.com/contact",');
+    expect(output).toContain('const CONTACT_URL = "https://example.com/contact";');
+    expect(output).toContain("contactUrl: CONTACT_URL,");
+    expect(output).toContain("const answerLinks = collectAnswerLinks(knowledgeDoc, CONTACT_URL);");
+  });
+
+  it("formats the knowledge with formatKnowledge and passes answerLinks to the handler", () => {
+    const output = buildApiRouteTemplate({ apiRoutePath: "functions/api/chat.ts", distDir: "dist", language: "en" });
+    expect(output).toContain("const knowledge = formatKnowledge(knowledgeDoc);");
+    expect(output).toContain('const answerLinks = collectAnswerLinks(knowledgeDoc, undefined, "en");');
+    expect(output).toContain("    answerLinks,\n");
   });
 });
 

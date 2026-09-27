@@ -1,3 +1,4 @@
+import { renderAnswer } from "./answer.js";
 import { WIDGET_STYLES } from "./styles.js";
 import type { ChatMessage, ChatResponseBody } from "./types.js";
 
@@ -156,8 +157,12 @@ export class FolioAgentWidgetElement extends HTMLElement {
     const titles = element("div", "titles");
     const headingEl = element("div", "heading");
     headingEl.textContent = heading;
+    // 学習元の説明は導入サイトごとに違い、リンクも含めたいので、属性ではなく slot で受ける
     const subheading = element("div", "subheading");
-    subheading.textContent = this.#text.subheadingText;
+    const subheadingSlot = element("slot");
+    subheadingSlot.name = "subheading";
+    subheadingSlot.textContent = this.#text.subheadingText;
+    subheading.appendChild(subheadingSlot);
     titles.append(headingEl, subheading);
     const close = element("button", "close");
     close.type = "button";
@@ -405,7 +410,8 @@ export class FolioAgentWidgetElement extends HTMLElement {
     if (!this.#messagesEl) return;
 
     const el = element("div", `message ${message.role}`);
-    el.textContent = message.text;
+    if (message.role === "assistant") el.append(...renderAnswer(message.text));
+    else el.textContent = message.text;
     this.#messagesEl.appendChild(el);
     this.#scrollToEnd();
   }

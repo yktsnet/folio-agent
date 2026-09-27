@@ -82,10 +82,12 @@ npx folio-agent-sync-zenn folio-agent.config.json zenn-snapshot.json
 ## 2. Chat Handler (Pages Function / Worker)
 
 ```ts
-import { createChatHandler, createGeminiGenerator } from "@folio-agent/handler";
+import { collectAnswerLinks, createChatHandler, createGeminiGenerator, formatKnowledge } from "@folio-agent/handler";
 import knowledgeDoc from "../knowledge.json";
 
-const knowledge = knowledgeDoc.pages.map((p) => `# ${p.url}\n\n${p.text}`).join("\n\n");
+const CONTACT_URL = "https://example.com/contact";
+const knowledge = formatKnowledge(knowledgeDoc);
+const answerLinks = collectAnswerLinks(knowledgeDoc, CONTACT_URL);
 
 interface Env {
   DB: D1Database;
@@ -96,14 +98,17 @@ export default {
   fetch: (request: Request, env: Env) =>
     createChatHandler({
       db: env.DB,
+      answerLinks,
       generateAnswer: createGeminiGenerator({
         apiKey: env.GEMINI_API_KEY,
         knowledge,
-        contactUrl: "https://example.com/contact",
+        contactUrl: CONTACT_URL,
       }),
     })(request),
 };
 ```
+
+`formatKnowledge` は各ページのタイトルと URL を含めて知識を整形する（記事をタイトルで案内させるため）。`collectAnswerLinks` は、回答に残してよいリンク（知識に含まれるこのサイトの外のページと Contact）を集める。handler は生成した回答を決まった形式に直してから返し（`normalize_answer`）、`answerLinks` に無いリンクと、そのまま書かれた URL は文字だけにする。`answerLinks` を渡さなければ、回答中のリンクはすべて文字になる。
 
 `contactUrl` を渡すと、依頼・相談（inquiry）経路の回答が具体的な URL で Contact ページを案内する。省略した場合は URL なしで「Contactページ」とだけ案内する。
 
@@ -123,6 +128,15 @@ D1 スキーマは `packages/handler/migrations/0001_init.sql` を `wrangler d1 
 
 - `lang="en"` を付けると UI 文言（ボタン・見出し・案内文・質問候補・プレースホルダ・開示文・エラー文）が英語になる。未指定は日本語。
 - パネルの見出し・冒頭の案内文・質問候補は属性で差し替えられる。`heading="…"`、`greeting="…"`、`suggestions="質問1|質問2|質問3"`（`|` 区切り）。`greeting=""` / `suggestions=""` で非表示にできる。未指定なら言語ごとの既定文言を出す。
+- ヘッダ2行目（既定は「公開している情報をもとに AI が答えます」）は、何をもとに答えるかを訪問者に示す行で、`slot="subheading"` の要素で差し替えられる。リンクも書ける:
+
+  ```html
+  <folio-agent-widget endpoint="/api/chat" policy-href="/data-policy">
+    <span slot="subheading">このサイトと <a href="https://zenn.dev/<username>">Zenn</a>（技術記事の投稿サイト）の記事をもとに AI が答えます</span>
+  </folio-agent-widget>
+  ```
+
+- 回答中のリンク（`[表示する文字](URL)`）は、表示する文字のリンクとして描く。同じサイト内の URL（Contact など）は同じタブで、外部の URL は新しいタブで開く。
 - `policy-href` の指し先ページには、①IPベースのレート制限（既定は10分6問・12時間12問）を行っていること、②入力内容と応答を D1 にログとして記録していること、③生成に使う Gemini API の無料枠は入力が学習に利用され得ることの3点を書く。ページ自体は導入サイト側の責務（folio-agent はテンプレートを同梱しない）。
 - 配色・フォントは CSS カスタムプロパティ6トークン（`--folio-agent-surface` / `text` / `muted` / `accent` / `accent-contrast` / `font`）で上書きできる。**未指定でもホストの配色（`color` / `color-scheme` 継承とCSSシステムカラー）から既定値を導出するため、サイトのライト/ダークどちらにも自然に馴染む**。変えたい場合のみ、上記トークンを上書きする。
 - 配色を変える場合も、決めるのは `surface` / `text` / `accent` の3色で足りる。境界線・吹き出し・入力欄・補助テキストはこの3色から導出する（`muted` / `accent-contrast` は導出値を変えたいときだけ指定する）。例として Poimandres 配色:

@@ -83,14 +83,24 @@ export interface ApiRouteAnswers {
 export function buildApiRouteTemplate(answers: ApiRouteAnswers): string {
   const knowledgeImportPath = buildKnowledgeImportPath(answers.apiRoutePath, answers.distDir);
 
-  const languageLine = answers.language === DEFAULT_LANGUAGE ? "" : `\n    language: ${JSON.stringify(answers.language)},`;
-  const contactUrlLine = answers.contactUrl ? `\n      contactUrl: ${JSON.stringify(answers.contactUrl)},` : "";
+  const nonDefaultLanguage = answers.language === DEFAULT_LANGUAGE ? undefined : JSON.stringify(answers.language);
+  const languageLine = nonDefaultLanguage ? `\n    language: ${nonDefaultLanguage},` : "";
+  const generatorLanguageLine = nonDefaultLanguage ? `\n      language: ${nonDefaultLanguage},` : "";
+  const contactUrlConst = answers.contactUrl ? [`const CONTACT_URL = ${JSON.stringify(answers.contactUrl)};`, ""] : [];
+  const contactUrlLine = answers.contactUrl ? "\n      contactUrl: CONTACT_URL," : "";
+  const linkArgs = [
+    "knowledgeDoc",
+    ...(answers.contactUrl || nonDefaultLanguage ? [answers.contactUrl ? "CONTACT_URL" : "undefined"] : []),
+    ...(nonDefaultLanguage ? [nonDefaultLanguage] : []),
+  ].join(", ");
 
   return [
-    'import { createChatHandler, createGeminiGenerator } from "@folio-agent/handler";',
+    'import { collectAnswerLinks, createChatHandler, createGeminiGenerator, formatKnowledge } from "@folio-agent/handler";',
     `import knowledgeDoc from "${knowledgeImportPath}";`,
     "",
-    'const knowledge = knowledgeDoc.pages.map((page) => `# ${page.url}\\n\\n${page.text}`).join("\\n\\n");',
+    ...contactUrlConst,
+    "const knowledge = formatKnowledge(knowledgeDoc);",
+    `const answerLinks = collectAnswerLinks(${linkArgs});`,
     "",
     "interface Env {",
     "  DB: D1Database;",
@@ -100,9 +110,10 @@ export function buildApiRouteTemplate(answers: ApiRouteAnswers): string {
     "export const onRequestPost: PagesFunction<Env> = async (context) => {",
     "  const handle = createChatHandler({",
     `    db: context.env.DB,${languageLine}`,
+    "    answerLinks,",
     "    generateAnswer: createGeminiGenerator({",
     "      apiKey: context.env.GEMINI_API_KEY,",
-    `      knowledge,${contactUrlLine}`,
+    `      knowledge,${contactUrlLine}${generatorLanguageLine}`,
     "    }),",
     "  });",
     "  return handle(context.request);",

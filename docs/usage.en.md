@@ -82,10 +82,12 @@ npx folio-agent-sync-zenn folio-agent.config.json zenn-snapshot.json
 ## 2. Chat Handler (Pages Function / Worker)
 
 ```ts
-import { createChatHandler, createGeminiGenerator } from "@folio-agent/handler";
+import { collectAnswerLinks, createChatHandler, createGeminiGenerator, formatKnowledge } from "@folio-agent/handler";
 import knowledgeDoc from "../knowledge.json";
 
-const knowledge = knowledgeDoc.pages.map((p) => `# ${p.url}\n\n${p.text}`).join("\n\n");
+const CONTACT_URL = "https://example.com/contact";
+const knowledge = formatKnowledge(knowledgeDoc);
+const answerLinks = collectAnswerLinks(knowledgeDoc, CONTACT_URL);
 
 interface Env {
   DB: D1Database;
@@ -96,14 +98,17 @@ export default {
   fetch: (request: Request, env: Env) =>
     createChatHandler({
       db: env.DB,
+      answerLinks,
       generateAnswer: createGeminiGenerator({
         apiKey: env.GEMINI_API_KEY,
         knowledge,
-        contactUrl: "https://example.com/contact",
+        contactUrl: CONTACT_URL,
       }),
     })(request),
 };
 ```
+
+`formatKnowledge` formats the knowledge with each page's title and URL (so answers can point to an article by its title). `collectAnswerLinks` gathers what answers may link to (pages outside this site that are in the knowledge, plus Contact). The handler brings each generated answer into the answer format before returning it (`normalize_answer`); links not in `answerLinks`, and bare URLs, are reduced to text. Without `answerLinks`, every link in an answer becomes text.
 
 With `contactUrl`, answers on the inquiry route point to the Contact page by its URL. Without it, they just say "the Contact page".
 
@@ -123,6 +128,15 @@ Apply the D1 schema `packages/handler/migrations/0001_init.sql` with `wrangler d
 
 - `lang="en"` switches the UI text (button, heading, greeting, suggested questions, placeholder, disclosure, errors) to English. Default is Japanese.
 - The panel heading, the opening greeting, and the suggested questions can be replaced via attributes: `heading="…"`, `greeting="…"`, `suggestions="Question 1|Question 2|Question 3"` (separated by `|`). Set `greeting=""` / `suggestions=""` to hide them. When unset, per-language defaults are shown.
+- The second header line (default "AI answers from what this site publishes") tells visitors what the answers are based on. Replace it with an element carrying `slot="subheading"`; it can include links:
+
+  ```html
+  <folio-agent-widget endpoint="/api/chat" policy-href="/data-policy">
+    <span slot="subheading">Answers come from this site and my articles on <a href="https://zenn.dev/<username>">Zenn</a> (a tech blogging platform)</span>
+  </folio-agent-widget>
+  ```
+
+- Links in answers (`[text to show](URL)`) are rendered as links showing that text. Same-site URLs (such as Contact) open in the current tab; external URLs open in a new tab.
 - The page linked from `policy-href` should state three things: (1) per-IP rate limiting is in effect (default 6 per 10 minutes and 12 per 12 hours), (2) input and answers are logged in D1, and (3) the Gemini API free tier used for generation may use input for training. The page itself is the integrating site's responsibility (folio-agent ships no template).
 - Colors and font can be overridden with six CSS custom properties (`--folio-agent-surface` / `text` / `muted` / `accent` / `accent-contrast` / `font`). **Without overrides, defaults are derived from the host's colors (inherited `color` / `color-scheme` and CSS system colors), so the widget fits both light and dark sites.** Override only when you want something else.
 - Even then, three colors are enough: `surface` / `text` / `accent`. Borders, bubbles, the input field, and supplementary text are derived from them (set `muted` / `accent-contrast` only to change their derived values). For example, the Poimandres palette:
