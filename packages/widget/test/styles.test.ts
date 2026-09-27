@@ -62,6 +62,11 @@ describe("WIDGET_STYLES", () => {
     expect(block(".subheading")).toContain("var(--_muted)");
   });
 
+  it("derives the text selection color and the caret color from accent instead of the browser default", () => {
+    expect(block("::selection")).toContain("color-mix(in srgb, var(--_accent) 32%, transparent)");
+    expect(WIDGET_STYLES).toMatch(/textarea\s*{[^}]*caret-color:\s*var\(--_accent\);/);
+  });
+
   it("keeps the input at 16px so iOS Safari does not zoom on focus", () => {
     expect(WIDGET_STYLES).toMatch(/textarea\s*{[^}]*font-size:\s*16px;/);
   });

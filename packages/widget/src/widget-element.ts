@@ -8,6 +8,7 @@ interface WidgetText {
   headingText: string;
   subheadingText: string;
   closeLabel: string;
+  resetLabel: string;
   greetingText: string;
   suggestions: string[];
   inputPlaceholder: string;
@@ -26,6 +27,7 @@ const WIDGET_TEXT: Record<Language, WidgetText> = {
     headingText: "このサイトについて質問",
     subheadingText: "公開している情報をもとに AI が答えます",
     closeLabel: "閉じる",
+    resetLabel: "新しい会話",
     greetingText: "制作実績・記事の内容・仕事の依頼について答えます。",
     suggestions: ["どんな制作実績がありますか？", "どんな考え方で仕事をしていますか？", "仕事を依頼するには？"],
     inputPlaceholder: "質問を入力",
@@ -42,6 +44,7 @@ const WIDGET_TEXT: Record<Language, WidgetText> = {
     headingText: "Ask about this site",
     subheadingText: "AI answers from what this site publishes",
     closeLabel: "Close",
+    resetLabel: "New conversation",
     greetingText: "Ask about past work, articles, or how to request a project.",
     suggestions: ["What have you built?", "How do you approach your work?", "How can I request a project?"],
     inputPlaceholder: "Type a question",
@@ -57,6 +60,7 @@ const WIDGET_TEXT: Record<Language, WidgetText> = {
 
 const CHAT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.5c0 3.9-3.6 7-8 7-1.1 0-2.2-.2-3.1-.6L4.5 20l1.2-3.4C4.6 15.5 4 14 4 12.5c0-3.9 3.6-7 8-7s8 3.1 8 7Z"/><path d="M9 12.5h.01M12 12.5h.01M15 12.5h.01" stroke-width="2.4"/></svg>`;
 const CLOSE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
+const RESET_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h8"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
 const SEND_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>`;
 
 const COMPACT_QUERY = "(max-width: 640px)";
@@ -87,12 +91,15 @@ export class FolioAgentWidgetElement extends HTMLElement {
   #toggleEl?: HTMLButtonElement;
   #panelEl?: HTMLElement;
   #closeEl?: HTMLButtonElement;
+  #resetEl?: HTMLButtonElement;
   #messagesEl?: HTMLElement;
   #suggestionsEl?: HTMLElement;
   #typingEl?: HTMLElement;
   #inputEl?: HTMLTextAreaElement;
   #sendEl?: HTMLButtonElement;
   #scrollLocked = false;
+  // 会話をやり直すたびに進める。やり直す前に送った質問の回答が遅れて届いても、描画しない
+  #conversation = 0;
   #previousOverflow = "";
 
   readonly #onViewportChange = (): void => this.#syncViewport();
@@ -157,25 +164,52 @@ export class FolioAgentWidgetElement extends HTMLElement {
     close.setAttribute("aria-label", this.#text.closeLabel);
     close.innerHTML = CLOSE_ICON;
     close.addEventListener("click", () => this.#setOpen(false));
-    header.append(titles, close);
+    const reset = element("button", "reset");
+    reset.type = "button";
+    reset.hidden = true;
+    reset.setAttribute("aria-label", this.#text.resetLabel);
+    reset.title = this.#text.resetLabel;
+    reset.innerHTML = RESET_ICON;
+    reset.addEventListener("click", () => this.#resetConversation());
+    header.append(titles, reset, close);
 
     const messages = element("div", "messages");
     messages.setAttribute("aria-live", "polite");
-    const greeting = this.getAttribute("greeting") ?? this.#text.greetingText;
-    if (greeting.trim()) {
-      const greetingEl = element("div", "greeting");
-      greetingEl.textContent = greeting;
-      messages.appendChild(greetingEl);
-    }
-    const suggestions = this.#buildSuggestions();
-    if (suggestions) messages.appendChild(suggestions);
-
     panel.append(header, messages, this.#buildForm());
 
     this.#panelEl = panel;
     this.#closeEl = close;
+    this.#resetEl = reset;
     this.#messagesEl = messages;
+    this.#renderIntro();
     return panel;
+  }
+
+  #renderIntro(): void {
+    if (!this.#messagesEl) return;
+    const greeting = this.getAttribute("greeting") ?? this.#text.greetingText;
+    if (greeting.trim()) {
+      const greetingEl = element("div", "greeting");
+      greetingEl.textContent = greeting;
+      this.#messagesEl.appendChild(greetingEl);
+    }
+    const suggestions = this.#buildSuggestions();
+    if (suggestions) this.#messagesEl.appendChild(suggestions);
+  }
+
+  #resetConversation(): void {
+    if (!this.#messagesEl) return;
+    this.#conversation += 1;
+    this.#messages = [];
+    this.#setPending(false);
+    this.#messagesEl.replaceChildren();
+    this.#suggestionsEl = undefined;
+    this.#renderIntro();
+    if (this.#resetEl) this.#resetEl.hidden = true;
+    if (this.#inputEl) this.#inputEl.value = "";
+    this.#syncInput();
+    if (matches(FINE_POINTER_QUERY)) this.#inputEl?.focus();
+    else this.#closeEl?.focus({ preventScroll: true });
   }
 
   #buildSuggestions(): HTMLElement | undefined {
@@ -346,6 +380,7 @@ export class FolioAgentWidgetElement extends HTMLElement {
       return;
     }
 
+    const conversation = this.#conversation;
     this.#setPending(true);
     let answer: string;
     try {
@@ -359,12 +394,14 @@ export class FolioAgentWidgetElement extends HTMLElement {
     } catch {
       answer = this.#text.networkErrorText;
     }
+    if (conversation !== this.#conversation) return;
     this.#setPending(false);
     this.#appendMessage({ role: "assistant", text: answer });
   }
 
   #appendMessage(message: ChatMessage): void {
     this.#messages.push(message);
+    if (this.#resetEl) this.#resetEl.hidden = false;
     if (!this.#messagesEl) return;
 
     const el = element("div", `message ${message.role}`);

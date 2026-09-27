@@ -33,6 +33,12 @@ export const WIDGET_STYLES = `
   svg {
     display: block;
   }
+  /* ホスト側の ::selection は Shadow DOM の中へ届かないので、ここで accent から作る。
+     指定しないとブラウザ既定の青になり、サイトの配色から浮く */
+  ::selection {
+    background: color-mix(in srgb, var(--_accent) 32%, transparent);
+    color: var(--_text);
+  }
 
   .toggle {
     position: fixed;
@@ -113,7 +119,7 @@ export const WIDGET_STYLES = `
   .header {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
     padding: 14px 12px 12px 18px;
     border-bottom: 1px solid var(--_hair);
   }
@@ -131,7 +137,8 @@ export const WIDGET_STYLES = `
     line-height: 1.4;
     color: var(--_muted);
   }
-  .close {
+  .close,
+  .reset {
     flex: none;
     display: grid;
     place-items: center;
@@ -143,10 +150,19 @@ export const WIDGET_STYLES = `
     color: var(--_text);
     cursor: pointer;
   }
-  .close:hover {
+  .reset {
+    background: transparent;
+    color: var(--_muted);
+  }
+  .reset[hidden] {
+    display: none;
+  }
+  .close:hover,
+  .reset:hover {
     background: color-mix(in srgb, var(--_text) 12%, transparent);
   }
-  .close svg {
+  .close svg,
+  .reset svg {
     width: 16px;
     height: 16px;
   }
@@ -255,6 +271,7 @@ export const WIDGET_STYLES = `
     resize: none;
     background: transparent;
     color: var(--_text);
+    caret-color: var(--_accent);
     /* 16px 未満だと iOS Safari がフォーカス時にページを拡大する */
     font-size: 16px;
     line-height: 1.5;
@@ -299,6 +316,7 @@ export const WIDGET_STYLES = `
 
   .toggle:focus-visible,
   .close:focus-visible,
+  .reset:focus-visible,
   .send:focus-visible,
   .suggestions button:focus-visible {
     outline: 2px solid var(--_focus);

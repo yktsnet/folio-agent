@@ -174,6 +174,7 @@
 - surface/textの既定値はCSSシステムカラー(Canvas/CanvasText)から、accentの既定値はtextから、accent-contrastの既定値はsurfaceから導出される
 - ユーザー発言の吹き出しの背景/枠線はaccentとsurfaceのcolor-mixで導出され、AI回答は塗りを持たない
 - mutedトークンは補助テキストのみに限定される
+- 文字選択の背景色と入力欄のキャレット色はaccentから導出される（ブラウザ既定の色を使わない）
 - 入力欄の文字サイズは16px（iOS Safariのフォーカス時拡大を起こさない）
 - 幅640px以下では全画面で開き、高さと上端は表示領域（visualViewport）から流し込まれる値に従う
 
@@ -185,6 +186,7 @@
 | 既定値の導出 | `derives surface and text defaults from CSS system colors, and accent from text` |
 | 吹き出しのcolor-mix導出 | `derives the user bubble from accent and surface via color-mix, and gives assistant text no fill` |
 | mutedの補助テキスト限定 | `keeps muted scoped to supplementary text only, not bubble backgrounds` |
+| 選択色・キャレット色のaccent導出 | `derives the text selection color and the caret color from accent instead of the browser default` |
 | 入力欄16px | `keeps the input at 16px so iOS Safari does not zoom on focus` |
 | 狭い画面での全画面表示 | `goes full screen on narrow viewports, sized from the visual viewport` |
 
@@ -197,9 +199,10 @@
 - 質問候補のクリックでその文言を送信し、候補を消す
 - 送信でendpoint属性のURLへPOSTし、ユーザー発言とAI回答を描画する
 - 回答待ちの間は入力中表示を出し、送信ボタンを無効にする
+- 「新しい会話」ボタンは発言があるときだけ表示され、押すと案内文と質問候補の状態に戻る。戻す前に送った質問の回答は描画しない
 - ネットワークエラー時は通信エラー文言を表示する
 - endpoint属性が無い場合は設定エラー文言を表示しfetchを呼ばない
-- lang="en"でトグル・プレースホルダ・送信/閉じるラベル・開示文言・エラー文言が英語になる
+- lang="en"でトグル・プレースホルダ・送信/閉じる/新しい会話のラベル・開示文言・エラー文言が英語になる
 - 未知のlang属性値は日本語にフォールバックする
 
 | 保証（要約） | 対応テスト |
@@ -211,6 +214,7 @@
 | 質問候補の送信 | `sends a suggestion when clicked and removes the suggestions` |
 | 送信・応答描画 | `sends a message to the configured endpoint and renders the answer` |
 | 回答待ちの表示と送信無効化 | `shows a typing indicator and disables sending until the answer arrives` |
+| 新しい会話への切り替え | `shows the new-conversation button only after a message, and resets to the greeting and suggestions` / `drops an answer that arrives after the conversation was reset` |
 | 通信エラー時の表示 | `renders a friendly message when the network request fails` |
 | endpoint未設定時の設定エラー | `shows a config error and does not call fetch when endpoint is missing` |
 | 英語ロケール対応 | `describe("lang=en")` 配下の該当テスト（トグル・プレースホルダ・送信/閉じるラベル・開示文言・エラー文言） |

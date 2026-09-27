@@ -177,6 +177,51 @@ describe("FolioAgentWidgetElement", () => {
     expect(root.querySelector<HTMLButtonElement>(".send")!.disabled).toBe(false);
   });
 
+  it("shows the new-conversation button only after a message, and resets to the greeting and suggestions", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: () => Promise.resolve({ answer: "ok" }) }));
+
+    const el = mount({ endpoint: "/api/chat" });
+    const root = shadow(el);
+    open(root);
+    const reset = root.querySelector<HTMLButtonElement>(".reset")!;
+    expect(reset.hidden).toBe(true);
+    expect(reset.getAttribute("aria-label")).toBe("新しい会話");
+
+    submit(root, "hi");
+    await flush();
+    expect(reset.hidden).toBe(false);
+
+    reset.click();
+    expect(root.querySelectorAll(".message")).toHaveLength(0);
+    expect(root.querySelector(".greeting")).not.toBeNull();
+    expect(root.querySelectorAll(".suggestions button")).toHaveLength(3);
+    expect(reset.hidden).toBe(true);
+  });
+
+  it("drops an answer that arrives after the conversation was reset", async () => {
+    let resolveFetch!: (value: unknown) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockReturnValue(new Promise((resolve) => (resolveFetch = resolve))),
+    );
+
+    const el = mount({ endpoint: "/api/chat" });
+    const root = shadow(el);
+    open(root);
+    submit(root, "hi");
+    root.querySelector<HTMLButtonElement>(".reset")!.click();
+    expect(root.querySelector(".typing")).toBeNull();
+
+    resolveFetch({ json: () => Promise.resolve({ answer: "late" }) });
+    await flush();
+
+    expect(root.querySelectorAll(".message")).toHaveLength(0);
+    const textarea = root.querySelector<HTMLTextAreaElement>("textarea")!;
+    textarea.value = "next";
+    textarea.dispatchEvent(new Event("input"));
+    expect(root.querySelector<HTMLButtonElement>(".send")!.disabled).toBe(false);
+  });
+
   it("renders a friendly message when the network request fails", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
 
@@ -214,6 +259,7 @@ describe("FolioAgentWidgetElement", () => {
       expect(root.querySelector(".toggle")?.textContent).toBe("Ask");
       expect(root.querySelector(".send")?.getAttribute("aria-label")).toBe("Send");
       expect(root.querySelector(".close")?.getAttribute("aria-label")).toBe("Close");
+      expect(root.querySelector(".reset")?.getAttribute("aria-label")).toBe("New conversation");
 
       open(root);
       const disclosure = root.querySelector(".disclosure");
