@@ -114,13 +114,13 @@ With `contactUrl`, answers on the inquiry route point to the Contact page by its
 
 Pass `language` (`"ja" | "en"`, default `ja`) to both `createChatHandler` (canned limit messages and routing keywords) and `createGeminiGenerator` (system prompt). Passing it to only one makes the canned messages and the prompt disagree on language.
 
-Apply the D1 schema in `packages/handler/migrations/` (`0001_init.sql` / `0002_answer_violations.sql`) with `wrangler d1 migrations apply`. `answer_violations` keeps answers that broke the answer format and the kinds of violation (not the visitor's input). Count the common mistakes with:
+Apply the D1 schema in `packages/handler/migrations/` (`0001_init.sql` / `0002_answer_violations.sql`) with `wrangler d1 migrations apply`. `chat_logs` serves as both the log and the rate-limit counter (default 6 per 10 minutes and 12 per 12 hours, configurable via `rateLimitConfig`). `answer_violations` keeps answers that broke the answer format and the kinds of violation (not the visitor's input). Count the common mistakes with:
 
 ```bash
 npx wrangler d1 execute <DB> --remote --command "SELECT j.value AS kind, attempt, COUNT(*) AS n FROM answer_violations, json_each(answer_violations.kinds) AS j GROUP BY kind, attempt ORDER BY n DESC"
 ```
 
-Kinds with many `attempt = 2` rows are mistakes regeneration doesn't fix, and are candidates for handling in the prompt or in code. The single `chat_logs` table serves as both the log and the rate-limit counter (default 6 per 10 minutes and 12 per 12 hours, configurable via `rateLimitConfig`).
+Kinds with many `attempt = 2` rows are mistakes regeneration doesn't fix, and are candidates for handling in the prompt or in code.
 
 ## 3. Widget (frontend)
 

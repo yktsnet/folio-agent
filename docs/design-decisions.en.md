@@ -29,7 +29,7 @@ Developed as an npm package separate from the site, and verified by integrating 
 
 ## Why Cloudflare Workers + LangGraph.js
 
-For the common Astro/Next + Cloudflare/Vercel crowd, a TypeScript package that completes with `npm install` + `wrangler deploy` keeps the adoption barrier lowest. Python on a separate host would require users to run a persistent server. LangGraph instead of plain function calls because it expresses the guard → route → generate → log graph declaratively. Only the StateGraph core is used, to keep the bundle small.
+For the common Astro/Next + Cloudflare/Vercel crowd, a TypeScript package that completes with `npm install` + `wrangler deploy` keeps the adoption barrier lowest. Python on a separate host would require users to run a persistent server. LangGraph instead of plain function calls because it expresses the guard → route → generate → check → (regenerate) → log graph, with its branches and loop, declaratively. Only the StateGraph core is used, to keep the bundle small.
 
 ## Why the Gemini free tier is the default
 
@@ -47,7 +47,7 @@ Under the principle that knowledge handed to an LLM's context is public, this re
 
 ## Why log to D1 without a consent button
 
-Logs feed quality improvement directly (question patterns, Contact conversion), and with a free tier, one table, and one row per conversation, the operating cost is close to zero. IP + input can count as personal information, so a line below the chat input plus a link to a details page tells visitors. Requiring explicit consent is excessive by the standard of common chat widgets and would hurt the experience, so there is none.
+Logs feed quality improvement directly (question patterns, Contact conversion), and with a free tier, one table for conversation logs, and one row per conversation, the operating cost is close to zero. IP + input can count as personal information, so a line below the chat input plus a link to a details page tells visitors. Requiring explicit consent is excessive by the standard of common chat widgets and would hurt the experience, so there is none.
 
 ## Why rate limiting counts D1 log rows
 

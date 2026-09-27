@@ -39,8 +39,9 @@ Gemini API キーは `packages/handler/dev/.dev.vars`（gitignore 済・`.dev.va
 ## アーキテクチャの要点
 
 - 知識は**ビルド時に全量生成**（full-context/CAG。検索なし）: `folio-agent-ingest` が利用者サイトの `dist/` + `knowledge/` から knowledge.json を作る。
-- 実行時は LangGraph StateGraph 1本: `input_guard →（レート制限内なら）route → generate → log`。外部依存（D1 / Gemini）はすべて factory への注入で受ける。
-- D1 の `chat_logs` がログとレート制限カウンタを兼ねる（テーブルは1つだけ）。
+- 実行時は LangGraph StateGraph 1本: `input_guard →（レート制限内なら）route → generate → check_answer → log`。`check_answer` が回答の形式の違反を見つけたら、違反を指摘して `generate` に1回だけ戻し、それでも違反なら `fallback` で文字だけにする。外部依存（D1 / Gemini）はすべて factory への注入で受ける。
+- LLM に任せるのは文章の中身だけで、回答の形式と参照先はコードで検査する（`docs/design-decisions.md`「LLM の出力をコードで検査し、差し戻す理由」）。回答の形式の定義は `chat/answer/contract.ts` にある。
+- D1 の `chat_logs` がログとレート制限カウンタを兼ねる。`answer_violations` は回答の形式の違反の記録で、訪問者の入力は持たない。
 - 設計判断は `docs/design-decisions.md` が正（README の Design Decisions はそのダイジェスト）。実装がこれと食い違う場合は指摘する。
 
 ## 検証手段

@@ -9,7 +9,8 @@
     {
       "binding": "DB",
       "database_name": "folio-agent",
-      "database_id": "54da97c3-179e-4b8b-98cf-c364d2188e2c"
+      "database_id": "54da97c3-179e-4b8b-98cf-c364d2188e2c",
+      "migrations_dir": "../migrations"
     }
   ]
 }
