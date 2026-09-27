@@ -1,3 +1,5 @@
+[🇯🇵 日本語](release.md) | [🇬🇧 English](release.en.md)
+
 # Release
 
 npm publish は `v*` タグの push をトリガーに GitHub Actions（`.github/workflows/release.yml`）が実施する。認証は npm の Trusted Publishing（OIDC）で、secrets にトークンは置かない。
