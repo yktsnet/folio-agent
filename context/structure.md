@@ -4,6 +4,8 @@
 
 ```
 folio-agent/
+├── scripts/
+│   └── eval.mjs          # 本物の Gemini で回答の形式を確かめる（npm run eval。PR・リリースの前に実行）
 ├── packages/
 │   ├── handler/              # @folio-agent/handler
 │   │   ├── src/

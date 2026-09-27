@@ -24,7 +24,25 @@ git log "$LAST"..origin/main --oneline --no-merges
 
 提案するバージョンと理由を示し、user の確認を得てから次へ進む。
 
-## 2. バージョンを上げて PR を出す
+## 2. 本物のモデルで確かめる
+
+LLM の入出力（プロンプト・知識の渡し方・回答の検査・既定のモデル）に関わる変更が前回タグから入っていれば、
+バージョンを上げる前に本物の Gemini で確かめる。**確かめることは必須で、何をどれだけ聞くかは変更に合わせて選ぶ。**
+決まった質問の一覧は持たない（入力は変更ごとに変わる）。
+
+```bash
+npm run eval -- --knowledge <導入サイトの knowledge.json> --contact-url <Contact の URL> --question "<変更に関わる質問>"
+```
+
+- キーは `packages/handler/dev/.dev.vars` の `GEMINI_API_KEY` から読む。無ければ user に書いてもらう（会話にキーを貼らせない）
+- 無料枠の回数を使うので、確かめたいことに足りる最小の問数にする
+- **最終的な回答に違反が残るか、呼び出しに失敗したら（スクリプトが失敗で終わる）、リリースしない**。原因を直してから確かめ直す
+- 1回目の違反や作り直しは失敗ではないが、どう間違えたかをレポートで読み、多ければ手当てを検討する
+- 結果（レポートの要点と、確かめた質問）を PR の `## 評価` に貼る
+
+LLM の入出力に関わる変更が無ければ、この段は飛ばし、PR にその旨を書く。
+
+## 3. バージョンを上げて PR を出す
 
 ```bash
 git switch -c claude/release-v<x.y.z> origin/main
@@ -37,20 +55,22 @@ git add packages/handler/package.json packages/widget/package.json package-lock.
 
 - `## 変更内容`: 前回タグからの利用者に見える変更（依存更新は1行にまとめる）
 - `## 利用側で必要な対応`: 属性・トークン・設定の書き換え。無ければ「なし」
-- `## 検証手順`: マージ後に user が打つタグ push のコマンド（3 と同じもの）
+- `## 評価`: 2 の結果。飛ばしたならその理由
+- `## 検証手順`: マージ後に user が打つタグ push のコマンド（4 と同じもの）
 
 push して `gh pr create` し、PR の URL を伝えて止まる。
 
-## 3. マージ後: タグ push を案内する
+## 4. マージ後: タグ push を案内する
 
-user がマージしたら、次のコマンドを提示する。Claude は実行しない。
+`gh pr view <番号> --json state` で PR がマージ済み（`MERGED`）であることを確かめてから、次のコマンドを提示する。
+マージ前にタグを打つと、Release ワークフローがバージョンの不一致で止まる。Claude は実行しない。
 
 ```bash
 git switch main && git pull --ff-only
 git tag v<x.y.z> && git push origin v<x.y.z>
 ```
 
-## 4. 公開を確認する
+## 5. 公開を確認する
 
 ```bash
 gh run list --workflow release.yml --limit 1

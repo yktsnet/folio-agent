@@ -61,7 +61,7 @@ widget はクリックされるまで通信しない。配色はサイトのラ�
 | 処理の流れ | LangGraph.js（`StateGraph` のみ） | 入力ガード→分類→生成→検査→（作り直し）→ログの分岐とループを宣言的に書ける |
 | 知識 | CAG（検索なし） | 知識がサイト1つ分なら、ベクトル検索基盤は過剰 |
 | 知識の選び方 | dist 走査 + URL グロブ（`picomatch`） | クロールが要らず、利用者は自サイトの URL だけ知っていればよい |
-| 生成 | Gemini API（既定 `gemini-3.1-flash-lite`） | 常時公開でもコストがかからない無料枠 |
+| 生成 | Gemini API（既定 `gemini-3.5-flash-lite`） | 常時公開でもコストがかからない無料枠。無料枠の回数の上限（1日500回）が受付に足りる中で最も新しい |
 | フロント | Web Components（Shadow DOM） | 導入先のフレームワークを問わず、CSS も衝突しない |
 
 ## Design Decisions
@@ -99,7 +99,7 @@ npm test
 npm run build
 ```
 
-D1 と Gemini を実際に使う確認は `packages/handler/dev/README.md` の dev ハーネスで行う。リリース手順は [docs/release.md](docs/release.md)。
+D1 と Gemini を実際に使う確認は `packages/handler/dev/README.md` の dev ハーネスで行う。LLM の回答が回答の形式を守るかは、`npm run eval -- --knowledge <knowledge.json> --question "…"` で本物の Gemini に確かめる（キーは `packages/handler/dev/.dev.vars`）。リリース手順は [docs/release.md](docs/release.md)。
 
 ## License
 

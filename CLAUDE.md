@@ -50,3 +50,4 @@ Gemini API キーは `packages/handler/dev/.dev.vars`（gitignore 済・`.dev.va
 | 型 | `npm run typecheck` |
 | ロジック | `npm run test` |
 | 実行確認（D1 / Gemini 込み） | dev ハーネス（user が実施。PR の `## 検証手順` に記載） |
+| LLM の回答（本物の Gemini） | `npm run eval -- --knowledge … --question "…"`。LLM の入出力に関わる変更は PR を出す前に実行し、結果を PR に貼る。質問は変更に合わせて選ぶ（キーは `packages/handler/dev/.dev.vars`） |

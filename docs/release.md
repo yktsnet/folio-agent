@@ -6,6 +6,8 @@ npm publish は `v*` タグの push をトリガーに GitHub Actions（`.github
 
 Claude Code では `/release` skill（`.claude/skills/release/`）がこの手順を順に進める。
 
+LLM の入出力に関わる変更が入っていれば、バージョンを上げる前に `npm run eval` で本物の Gemini に確かめ、結果を PR に貼る。何を聞くかは変更に合わせて選ぶ。最終的な回答に違反が残るか、呼び出しに失敗したらリリースしない。
+
 1. ブランチで `npm version <x.y.z> -w @folio-agent/handler -w @folio-agent/widget --no-git-tag-version` を実行し、2パッケージのバージョンを揃えてコミットし、PR を出す（main へは直接 push しない）。
 2. PR をマージしてから、main で `git tag v<x.y.z>` を push する。
 3. CI が typecheck / test / build を通した上で `npm publish --provenance` を実行する（タグと package.json のバージョンが不一致だとジョブ冒頭で fail する）。publish の後、自動生成のリリースノートで GitHub Release を作る。

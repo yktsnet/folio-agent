@@ -35,6 +35,8 @@ For the common Astro/Next + Cloudflare/Vercel crowd, a TypeScript package that c
 
 It keeps an always-on public bot at zero cost. Which engine generates the answer does not affect the subject (CAG as a knowledge design). The free tier may use input for training, which is acceptable because the knowledge is public information only and the disclosure page states the same premise for visitor input. On days the free tier runs out, the bot replies "reception is closed for today + go to Contact" rather than going silent.
 
+The default model is chosen by free-tier quota. A public reception bot shares one daily quota among all visitors, and a regeneration calls the model twice for one question. Newer Flash models (such as `gemini-3.8-flash`) allow only 20 free requests a day, which is not enough, so the default is `gemini-3.5-flash-lite`, the newest Flash-Lite with 500 a day. In evaluation against the real model (`npm run eval`) it kept the answer format better than `gemini-3.1-flash-lite`, and answered faster.
+
 ## Why knowledge is selected by "dist traversal + URL globs"
 
 It combines file access for reading (no crawling, lives alongside the build) with URLs as selectors (users only need to know their own site's URL structure). Runtime crawling and a hand-written single JSON knowledge file were avoided because both leave syncing to people. Supplementary knowledge goes explicitly into a `knowledge/` directory mirroring URL paths, keeping "only what you put in gets in".

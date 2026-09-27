@@ -22,7 +22,7 @@ export type GenerateAnswerFn = (input: string, route: ChatRoute, correction?: An
 
 export function createGeminiGenerator(config: GeminiGeneratorConfig): GenerateAnswerFn {
   const client = new GoogleGenAI({ apiKey: config.apiKey });
-  const model = config.model ?? "gemini-3.1-flash-lite";
+  const model = config.model ?? "gemini-3.5-flash-lite";
   const language = config.language ?? DEFAULT_LANGUAGE;
 
   return async (input, route, correction) => {
