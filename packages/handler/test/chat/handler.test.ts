@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createChatHandler } from "../../src/chat/handler.js";
 import { createFakeD1 } from "./fake-d1.js";
+import type { AnswerViolationRow } from "./fake-d1.js";
 
 function request(body: unknown, headers: Record<string, string> = {}): Request {
   return new Request("https://example.com/api/chat", {
@@ -21,6 +22,26 @@ describe("createChatHandler", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ answer: "hello there", route: "works" });
+  });
+
+  it("records answers that broke the answer format in answer_violations, without the visitor's message", async () => {
+    const db = createFakeD1() as ReturnType<typeof createFakeD1> & { answerViolations: AnswerViolationRow[] };
+    const handle = createChatHandler({
+      db,
+      generateAnswer: vi.fn().mockResolvedValueOnce("詳細は [Works](/) です").mockResolvedValueOnce("詳細は Works ページです"),
+    });
+
+    const response = await handle(request({ message: "秘密の質問です、Worksについて" }, { "CF-Connecting-IP": "1.2.3.4" }));
+
+    expect(await response.json()).toEqual({ answer: "詳細は Works ページです", route: "works" });
+    expect(db.answerViolations).toHaveLength(1);
+    expect(db.answerViolations[0]).toMatchObject({
+      route: "works",
+      attempt: 1,
+      kinds: '["disallowed_link"]',
+      answer: "詳細は [Works](/) です",
+    });
+    expect(JSON.stringify(db.answerViolations)).not.toContain("秘密の質問");
   });
 
   it("rejects an empty message with 400", async () => {

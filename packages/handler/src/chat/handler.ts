@@ -1,6 +1,6 @@
 import type { AnswerLink } from "./answer/links.js";
 import { buildChatGraph } from "./graph.js";
-import { logChat } from "./log.js";
+import { logAnswerViolation, logChat } from "./log.js";
 import { checkRateLimit } from "./rate-limit.js";
 import type { GenerateAnswerFn } from "./gemini.js";
 import type { Language, RateLimitConfig } from "./types.js";
@@ -29,6 +29,7 @@ export function createChatHandler(config: ChatHandlerConfig): (request: Request)
     rateLimitConfig,
     language: config.language,
     answerLinks: config.answerLinks,
+    logAnswerViolation: (entry) => logAnswerViolation(config.db, entry),
   });
 
   return async (request: Request): Promise<Response> => {

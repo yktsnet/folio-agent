@@ -42,8 +42,12 @@ flowchart TD
     Guard -->|"within limit"| Route["route_message<br/>keyword routing"]
     Guard -->|"exceeded"| Log["log"]
     Route --> Generate{{"generate<br/>Gemini + knowledge.json"}}
-    Generate --> Normalize["normalize_answer<br/>enforce answer format and links"]
-    Normalize --> Log
+    Generate --> Check{"check_answer<br/>check the answer format"}
+    Check -->|"complies"| Log
+    Check -->|"violation (1st)<br/>point it out, regenerate"| Generate
+    Check -->|"still violates"| Fallback["fallback<br/>reduce to plain text"]
+    Fallback --> Log
+    Check -.->|"record the violation"| Violations[("D1: answer_violations")]
     Log --> D1[("D1: chat_logs")]
 ```
 
@@ -54,7 +58,7 @@ The widget makes no network request until it is clicked. Its colors follow the s
 | Layer | Technology | Reason |
 |---|---|---|
 | Runtime | Cloudflare Workers + D1 | Free tier, `CF-Connecting-IP`, and D1 in one place, with no extra infrastructure |
-| Flow | LangGraph.js (`StateGraph` only) | Expresses the guard → route → generate → normalize → log branching declaratively, with a deterministic stage after generation |
+| Flow | LangGraph.js (`StateGraph` only) | Expresses the guard → route → generate → check → (regenerate) → log branching and loop declaratively |
 | Knowledge | CAG (no search) | For one site's worth of knowledge, a vector search stack is overkill |
 | Knowledge selection | dist traversal + URL globs (`picomatch`) | No crawling; users only need to know their own site's URLs |
 | Generation | Gemini API (default `gemini-3.1-flash-lite`) | A free tier that keeps an always-on bot at zero cost |
@@ -64,19 +68,7 @@ The widget makes no network request until it is clicked. Its colors follow the s
 
 Only the key points. The full text, including what was rejected and when to revisit, is in [docs/design-decisions.en.md](docs/design-decisions.en.md).
 
-- **The model writes the prose, code owns the shape**: the answer format and what it may link to are not left to the prompt; `normalize_answer`, after generation, enforces them in code. The widget renders only that format
-
-```mermaid
-flowchart TD
-    Knowledge["Material<br/>knowledge"] --> Prompt["Instruction<br/>ask for the format"]
-    subgraph LLM["LLM (no guarantee it complies)"]
-        Gen{{"write the prose"}}
-    end
-    Prompt --> Gen
-    Gen --> Normalize["Check and correct<br/>normalize_answer"]
-    Normalize --> Widget["Render<br/>widget"]
-```
-
+- **The model writes the prose, code checks the shape**: the answer format and what it may link to are not left to the prompt. `check_answer`, after generation, checks them in code; a violation is pointed out to the model for one regeneration, and whatever still violates is reduced to plain text. Violations are recorded, and only common mistakes get handled in the prompt or in code
 - **No search**: CAG is enough while the knowledge is small. The boundary for switching to RAG is known; this sits on the near side of it
 - **Narrow target**: only static sites that build to `dist/` + Cloudflare Workers. Generalizing waits until users need it
 - **Gemini free tier by default**: visitors are told on the disclosure page that input may be used for training

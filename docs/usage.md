@@ -108,13 +108,19 @@ export default {
 };
 ```
 
-`formatKnowledge` は各ページのタイトルと URL を含めて知識を整形する（記事をタイトルで案内させるため）。`collectAnswerLinks` は、回答に残してよいリンク（知識に含まれるこのサイトの外のページと Contact）を集める。handler は生成した回答を決まった形式に直してから返し（`normalize_answer`）、`answerLinks` に無いリンクと、そのまま書かれた URL は文字だけにする。`answerLinks` を渡さなければ、回答中のリンクはすべて文字になる。
+`formatKnowledge` は各ページのタイトルと URL を含めて知識を整形する（記事をタイトルで案内させるため）。`collectAnswerLinks` は、回答に残してよいリンク（知識に含まれるこのサイトの外のページと Contact）を集める。handler は生成した回答を決まった形式に照らし（`check_answer`）、違反があれば AI に指摘して1回だけ作り直させる。作り直しても違反が残れば、`answerLinks` に無いリンクとそのまま書かれた URL を文字にして返す。`answerLinks` を渡さなければ、回答中のリンクはすべて違反として扱われる。
 
 `contactUrl` を渡すと、依頼・相談（inquiry）経路の回答が具体的な URL で Contact ページを案内する。省略した場合は URL なしで「Contactページ」とだけ案内する。
 
 `language`（`"ja" | "en"`、既定 `ja`）は `createChatHandler`（上限通知の定型文・ルーティングキーワード）と `createGeminiGenerator`（システムプロンプト）の両方に渡す。片方だけ渡すと定型文とプロンプトの言語がずれる。
 
-D1 スキーマは `packages/handler/migrations/0001_init.sql` を `wrangler d1 migrations apply` で適用する。`chat_logs` テーブル1つがログとレート制限カウンタ（既定は10分6問・12時間12問、`rateLimitConfig` で変更可）を兼ねる。
+D1 スキーマは `packages/handler/migrations/` の SQL（`0001_init.sql` / `0002_answer_violations.sql`）を `wrangler d1 migrations apply` で適用する。`answer_violations` には、回答の形式を破った回答と違反の種類が残る（訪問者の入力は残さない）。どの間違いが多いかは次で集計できる:
+
+```bash
+npx wrangler d1 execute <DB> --remote --command "SELECT j.value AS kind, attempt, COUNT(*) AS n FROM answer_violations, json_each(answer_violations.kinds) AS j GROUP BY kind, attempt ORDER BY n DESC"
+```
+
+`attempt = 2` の行が多い種類は、作り直しでも直らない間違いで、プロンプトかコードで手当てする候補になる。`chat_logs` テーブル1つがログとレート制限カウンタ（既定は10分6問・12時間12問、`rateLimitConfig` で変更可）を兼ねる。
 
 ## 3. Widget (frontend)
 

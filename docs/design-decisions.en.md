@@ -4,18 +4,20 @@
 
 The full text of folio-agent's design decisions. Each one records not only what was chosen but also what was rejected and at which boundary to revisit it. For the key points only, see [Design Decisions in the README](../README.en.md#design-decisions).
 
-## Why code, not the prompt, guarantees the model's output
+## Why code checks the model's output and sends it back
 
 LLM output is probabilistic; nothing guarantees the format a prompt asks for. What hurts a reception chat is a broken shape (stray Markdown) and wrong references (URLs that don't exist, links to the page the visitor is already on), and both erode trust directly. So the model is trusted with the prose only, and an answer goes through four stages.
 
 1. **Material**: give the model what it needs to comply. An instruction to use information it never received (such as article titles) cannot be followed
 2. **Instruction** (`chat/prompt/`): ask for the format, without assuming it will be followed
-3. **Check and correct** (`chat/answer/`, the `normalize_answer` node in the graph): after generation, code brings the answer into the format agreed between handler and widget. This is where the guarantee lives
+3. **Check and send back** (`chat/answer/contract.ts`, the `check_answer` node in the graph): after generation, code checks the answer against the format agreed between handler and widget. On a violation, the model is told what is wrong and where, and regenerates once (`chat/prompt/correction.ts`). The model does the fixing, so meaning survives. If the regenerated answer still violates, it is reduced to plain text as a last resort (`chat/answer/fallback.ts`)
 4. **Render** (widget): draws only that format. No HTML is parsed
 
-The answer format: plain text, paragraphs separated by blank lines, and one notation only, links as `[text to show](http(s)://…)`, pointing only to `answerLinks` (pages outside this site that are in the knowledge, plus Contact). This site's own pages are named rather than linked, since the visitor is already on the site. `normalize_answer` reduces disallowed links and bare URLs to text (an allowed bare URL becomes a link titled from `answerLinks`). For links, this turns the existing rule "never invent what the knowledge doesn't say" into something code enforces.
+The answer format: plain text, paragraphs separated by blank lines, and one notation only, links as `[text to show](URL)`, pointing only to `answerLinks` (pages outside this site that are in the knowledge, plus Contact). This site's own pages are named rather than linked, since the visitor is already on the site; the material side hands the model no URL for them either.
 
-Checking lives in the handler rather than the widget because only the handler knows which references are allowed (URLs in the knowledge, the Contact URL). It is a graph node so that a deterministic stage between generation and logging stays in place as rules are added. It is the same idea as the author's [order-system-rag](https://github.com/yktsnet/order-system-rag), which checks model-generated SQL deterministically before running it: code always stands behind the model.
+Rewriting broken output in code is deliberately avoided. There are endless ways to break the format, every rewrite rule opens a new gap, and rewriting without understanding cannot produce natural wording. Instead, violations are recorded in `answer_violations` (without the visitor's input), and only common mistakes get handled in the prompt or in deterministic code. Regeneration spends free-tier quota, so it happens once at most.
+
+Checking lives in the handler rather than the widget because only the handler knows which references are allowed. It is a graph node so that the regeneration loop and the last resort keep the same shape as rules are added. It is the same idea as the author's [order-system-rag](https://github.com/yktsnet/order-system-rag), which checks model-generated SQL deterministically before running it: code always stands behind the model.
 
 ## Why CAG
 

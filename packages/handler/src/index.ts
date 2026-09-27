@@ -19,12 +19,13 @@ export { createGeminiGenerator } from "./chat/gemini.js";
 export { buildSystemPrompt } from "./chat/prompt/index.js";
 export { collectAnswerLinks } from "./chat/answer/links.js";
 export type { AnswerLink } from "./chat/answer/links.js";
-export type { GenerateAnswerFn, GeminiGeneratorConfig } from "./chat/gemini.js";
+export type { AnswerCorrection, GenerateAnswerFn, GeminiGeneratorConfig } from "./chat/gemini.js";
 export { classifyRoute } from "./chat/route.js";
-export { logChat } from "./chat/log.js";
+export { logAnswerViolation, logChat } from "./chat/log.js";
 export type {
   ChatRoute,
   ChatGraphDeps,
+  AnswerViolationLogEntry,
   ChatLogEntry,
   RateLimitConfig,
   RateLimitResult,
