@@ -163,39 +163,51 @@
 ### 12. `packages/widget/test/styles.test.ts` — packages/widget/src/styles.ts (WIDGET_STYLES)
 
 - 各テーマトークン(`--folio-agent-surface`/`text`/`muted`/`accent`/`accent-contrast`/`font`)がvar()＋フォールバック値で参照される
-- メッセージ吹き出しは改行を保持する
+- メッセージは改行を保持する
 - `:host`はホストのcolor/color-schemeを継承する
-- パネル/テキストの既定値はCSSシステムカラー(Canvas/CanvasText)から導出される
-- 吹き出しの背景/枠線はcolor-mix導出で、テーマトークンがmutedより優先される
+- surface/textの既定値はCSSシステムカラー(Canvas/CanvasText)から、accentの既定値はtextから、accent-contrastの既定値はsurfaceから導出される
+- ユーザー発言の吹き出しの背景/枠線はaccentとsurfaceのcolor-mixで導出され、AI回答は塗りを持たない
 - mutedトークンは補助テキストのみに限定される
+- 入力欄の文字サイズは16px（iOS Safariのフォーカス時拡大を起こさない）
+- 幅640px以下では全画面で開き、高さと上端は表示領域（visualViewport）から流し込まれる値に従う
 
 | 保証（要約） | 対応テスト |
 |---|---|
 | テーマトークンのvar()参照 | `references %s via var() with a fallback` / `no longer hardcodes the themed colors without a var() fallback` |
 | 改行の保持 | `preserves newlines in message bubbles` |
 | :hostの継承 | `makes :host adopt the host's color and color-scheme so system colors adapt` |
-| システムカラーからの既定値導出 | `derives panel and text defaults from CSS system colors instead of fixed hex` |
-| color-mix導出とmuted優先順位 | `derives bubble background/border via color-mix, prioritizing the theme tokens over the muted token` |
+| 既定値の導出 | `derives surface and text defaults from CSS system colors, and accent from text` |
+| 吹き出しのcolor-mix導出 | `derives the user bubble from accent and surface via color-mix, and gives assistant text no fill` |
 | mutedの補助テキスト限定 | `keeps muted scoped to supplementary text only, not bubble backgrounds` |
+| 入力欄16px | `keeps the input at 16px so iOS Safari does not zoom on focus` |
+| 狭い画面での全画面表示 | `goes full screen on narrow viewports, sized from the visual viewport` |
 
 ### 13. `packages/widget/test/widget-element.test.ts` — packages/widget/src/widget-element.ts (FolioAgentWidgetElement / defineFolioAgentWidget)
 
-- 初期状態はトグルボタンのみ描画し、クリックまでネットワーク呼び出しをしない
-- 初回オープン時のみpolicy-hrefリンク付き開示文言を表示し、複数回開閉しても複製されない
-- 送信でendpoint属性のURLへPOSTし、ユーザー発言とAI回答を吹き出しとして描画する
+- 初期状態は閉じたトグルボタンのみ見え、クリックまでネットワーク呼び出しをしない
+- トグルで開き、閉じるボタンとEscキーで閉じる。開閉状態は`aria-expanded`/`aria-hidden`に反映される
+- パネル内にpolicy-hrefリンク付き開示文言を表示し、複数回開閉しても複製されない
+- 既定の案内文と質問候補を表示し、`heading`/`greeting`/`suggestions`属性で差し替え・非表示にできる
+- 質問候補のクリックでその文言を送信し、候補を消す
+- 送信でendpoint属性のURLへPOSTし、ユーザー発言とAI回答を描画する
+- 回答待ちの間は入力中表示を出し、送信ボタンを無効にする
 - ネットワークエラー時は通信エラー文言を表示する
 - endpoint属性が無い場合は設定エラー文言を表示しfetchを呼ばない
-- lang="en"でプレースホルダ・送信ラベル・開示文言・エラー文言が英語になる
+- lang="en"でトグル・プレースホルダ・送信/閉じるラベル・開示文言・エラー文言が英語になる
 - 未知のlang属性値は日本語にフォールバックする
 
 | 保証（要約） | 対応テスト |
 |---|---|
 | 初期状態でネットワーク呼び出しなし | `renders only a closed toggle button and makes no network call until clicked` |
-| 開示文言の初回表示・非複製 | `shows the disclosure line with a policy link only on first open` |
+| 開閉（閉じるボタン・Esc） | `opens with the toggle and closes with the close button or Escape` |
+| 開示文言の表示・非複製 | `shows the disclosure line with a policy link exactly once in the panel` |
+| 案内文・質問候補と属性での差し替え | `shows the default greeting and suggestions, and lets attributes override or remove them` |
+| 質問候補の送信 | `sends a suggestion when clicked and removes the suggestions` |
 | 送信・応答描画 | `sends a message to the configured endpoint and renders the answer` |
+| 回答待ちの表示と送信無効化 | `shows a typing indicator and disables sending until the answer arrives` |
 | 通信エラー時の表示 | `renders a friendly message when the network request fails` |
 | endpoint未設定時の設定エラー | `shows a config error and does not call fetch when endpoint is missing` |
-| 英語ロケール対応 | `describe("lang=en")` 配下の該当テスト（プレースホルダ・送信ラベル・開示文言・エラー文言） |
+| 英語ロケール対応 | `describe("lang=en")` 配下の該当テスト（トグル・プレースホルダ・送信/閉じるラベル・開示文言・エラー文言） |
 | 未知langの日本語フォールバック | `falls back to ja for an unrecognized lang attribute` |
 
 ## About

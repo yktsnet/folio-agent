@@ -10,6 +10,11 @@ const TOKENS = [
   "--folio-agent-font",
 ];
 
+function block(selector: string): string {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return WIDGET_STYLES.match(new RegExp(`(?:^|\\n)\\s*${escaped}\\s*{[^}]*}`))?.[0] ?? "";
+}
+
 describe("WIDGET_STYLES", () => {
   it.each(TOKENS)("references %s via var() with a fallback", (token) => {
     const pattern = new RegExp(`var\\(${token},\\s*[^)]+\\)`);
@@ -27,7 +32,7 @@ describe("WIDGET_STYLES", () => {
   });
 
   it("preserves newlines in message bubbles", () => {
-    expect(WIDGET_STYLES).toMatch(/\.message\s*{[^}]*white-space:\s*pre-wrap;/);
+    expect(WIDGET_STYLES).toMatch(/\.message,\s*\.greeting\s*{[^}]*white-space:\s*pre-wrap;/);
   });
 
   it("makes :host adopt the host's color and color-scheme so system colors adapt", () => {
@@ -35,29 +40,36 @@ describe("WIDGET_STYLES", () => {
     expect(WIDGET_STYLES).toMatch(/:host\s*{[^}]*color-scheme:\s*inherit;/);
   });
 
-  it("derives panel and text defaults from CSS system colors instead of fixed hex", () => {
+  it("derives surface and text defaults from CSS system colors, and accent from text", () => {
     expect(WIDGET_STYLES).toContain("var(--folio-agent-surface, Canvas)");
     expect(WIDGET_STYLES).toContain("var(--folio-agent-text, CanvasText)");
+    expect(WIDGET_STYLES).toContain("var(--folio-agent-accent, var(--_text))");
+    expect(WIDGET_STYLES).toContain("var(--folio-agent-accent-contrast, var(--_surface))");
   });
 
-  it("derives bubble background/border via color-mix, prioritizing the theme tokens over the muted token", () => {
-    const assistantBlock = WIDGET_STYLES.match(/\.message\.assistant\s*{[^}]*}/)?.[0] ?? "";
-    const userBlock = WIDGET_STYLES.match(/\.message\.user\s*{[^}]*}/)?.[0] ?? "";
+  it("derives the user bubble from accent and surface via color-mix, and gives assistant text no fill", () => {
+    const userBlock = block(".message.user");
+    expect(userBlock).toContain("color-mix(in srgb, var(--_accent) 14%, var(--_surface))");
+    expect(userBlock).toContain("color-mix(in srgb, var(--_accent) 28%, var(--_surface))");
+    expect(userBlock).not.toContain("--_muted");
 
-    expect(assistantBlock).toContain(
-      "color-mix(in srgb, var(--folio-agent-text, CanvasText)",
-    );
-    expect(assistantBlock).toContain("var(--folio-agent-surface, Canvas))");
-    expect(userBlock).toContain(
-      "color-mix(in srgb, var(--folio-agent-text, CanvasText)",
-    );
-    expect(userBlock).toContain("var(--folio-agent-surface, Canvas))");
-    expect(assistantBlock).not.toContain("--folio-agent-muted");
-    expect(userBlock).not.toContain("--folio-agent-accent");
+    const assistantBlock = block(".message.assistant,");
+    expect(assistantBlock).not.toContain("background");
   });
 
   it("keeps muted scoped to supplementary text only, not bubble backgrounds", () => {
-    const disclosureBlock = WIDGET_STYLES.match(/\.disclosure\s*{[^}]*}/)?.[0] ?? "";
-    expect(disclosureBlock).toContain("var(--folio-agent-muted,");
+    expect(block(".disclosure")).toContain("var(--_muted)");
+    expect(block(".subheading")).toContain("var(--_muted)");
+  });
+
+  it("keeps the input at 16px so iOS Safari does not zoom on focus", () => {
+    expect(WIDGET_STYLES).toMatch(/textarea\s*{[^}]*font-size:\s*16px;/);
+  });
+
+  it("goes full screen on narrow viewports, sized from the visual viewport", () => {
+    const mobile = WIDGET_STYLES.match(/@media \(max-width: 640px\)\s*{[\s\S]*?\n  }\n/)?.[0] ?? "";
+    expect(mobile).toContain("height: var(--vv-height, 100dvh);");
+    expect(mobile).toContain("top: var(--vv-top, 0px);");
+    expect(mobile).toContain("width: 100%;");
   });
 });

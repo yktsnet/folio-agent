@@ -80,7 +80,7 @@ flowchart TD
 
 1. **Knowledge Generation（ビルド時）**: `folio-agent-ingest` が `folio-agent.config.json` の URL グロブに従って `dist/` と `knowledge/`（+ Zenn 記事・任意。CI 等で記事ディレクトリに届かない場合は `folio-agent-sync-zenn` のスナップショットにフォールバック）から knowledge.json を作る。
 2. **Chat Handler（Pages Function / Worker）**: `createChatHandler` + `createGeminiGenerator` を数行で組み立てる。`contactUrl` で Contact 誘導、`language` で ja/en を切り替える。
-3. **Widget（フロント）**: `<folio-agent-widget>` を1行埋め込む。テーマは CSS カスタムプロパティ6トークン、UI 言語は `lang` 属性。
+3. **Widget（フロント）**: `<folio-agent-widget>` を1行埋め込む。テーマは CSS カスタムプロパティ（3色で足りる）、UI 言語は `lang` 属性。
 
 ## Design Decisions
 
@@ -89,7 +89,7 @@ flowchart TD
 - **CAG（検索なし）**: 知識源が小規模ならベクトル検索基盤は過剰。RAGへ切り替えるべき境界を知った上で、手前側を選ぶ。
 - **v1 のスコープ限定**: サポート対象は「distを吐く静的サイト + Cloudflare Workers」のみ。汎用化のコストは利用者が現れてから払う。
 - **Gemini 無料枠が既定**: 常時公開でコストゼロを維持する。入力が学習に使われ得る前提は、開示ページで訪問者に通知する。
-- **ログは D1・同意ボタンなし**: チャット初回の一文と詳細ページへのリンクで通知する。レート制限もこのログの COUNT を流用し、別の仕組みを持たない。
+- **ログは D1・同意ボタンなし**: 入力欄の下の一文と詳細ページへのリンクで通知する。レート制限もこのログの COUNT を流用し、別の仕組みを持たない。
 
 ## Scope
 
