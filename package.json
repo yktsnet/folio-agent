@@ -15,7 +15,7 @@
     "eval": "tsc -b && node scripts/eval.mjs"
   },
   "devDependencies": {
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.3",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },
