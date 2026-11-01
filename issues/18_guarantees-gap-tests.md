@@ -18,7 +18,7 @@ type: feat
 
 ### 背景
 
-`/guarantee-audit`による保証棚卸しで `docs/guarantees.md`（本Issueに先立ちuserの裁可を経て着地済み）を敷設した際、実装は既にあるがテストで固定されていない欠落を5件発見した。台帳内では各項目に「欠落（テスト未着地、本Issueで追加予定）」と記載している。
+`/guarantee-audit`による保証棚卸しで `docs/guarantees.md`（本Issueに先立ちuserの承認を経て着地済み）を敷設した際、実装は既にあるがテストで固定されていない欠落を5件発見した。台帳内では各項目に「欠落（テスト未着地、本Issueで追加予定）」と記載している。
 
 なお棚卸しの過程で、`DEFAULT_RATE_LIMIT_CONFIG`の実値（`packages/handler/src/chat/types.ts:16`、`shortWindowMax: 6 / longWindowHours: 12 / longWindowMax: 12`）と、ユーザーのグローバル指示に含まれる記述（「10分3問・日次10問」）が食い違っていることに気づいた。実装が正であり、本Issueのスコープ外（実値の変更は行わない。テストで現在の実値を固定するのみ）。
 
