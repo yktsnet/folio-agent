@@ -4,8 +4,6 @@
       "Bash(git push origin main*)",
       "Bash(git push --force *)",
       "Bash(git push -f *)",
-      "Bash(ssh *)",
-      "Bash(rsync *)",
       "Bash(wrangler deploy*)",
       "Bash(npx wrangler deploy*)",
       "Bash(npm publish*)"
