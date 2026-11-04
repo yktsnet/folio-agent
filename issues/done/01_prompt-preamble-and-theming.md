@@ -4,7 +4,7 @@ PR: https://github.com/yktsnet/folio-agent/pull/1
 Merged: 87ad45fdec781ee9cd26c2c0cdb0614e799e7818
 
 ## 変更内容
-dogfooding検証で見つかった回答品質の問題（無回答原則がthoughts経路にしか効いていない・Markdown記法が生で表示される・口調がオフィスライク）を解消するため、`buildSystemPrompt`（packages/handler/src/chat/gemini.ts）を再構成した。
+dogfooding検証で見つかった回答品質の問題（無回答原則がthoughts経路にしか入っていない・Markdown記法が生で表示される・口調がオフィスライク）を解消するため、`buildSystemPrompt`（packages/handler/src/chat/gemini.ts）を再構成した。
 
 - 共通前文（全経路）に以下を追加:
   - ペルソナ: 定型の前置き挨拶をしない、簡潔（3〜4文以内）な自然な口語

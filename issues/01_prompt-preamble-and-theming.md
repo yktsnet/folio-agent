@@ -5,7 +5,7 @@ github_issue: 2
 status: close
 type: feat
 対象: packages/handler/src/chat/gemini.ts / packages/handler/test/chat/gemini.test.ts (新規) / packages/widget/src/styles.ts / packages/widget/test/styles.test.ts (新規)
-内容: 実機検証で見つかった回答品質の問題（無回答原則が thoughts 経路にしか効いていない・Markdown 記法が生で表示される・口調がオフィスライク）をシステムプロンプト共通前文の再設計で解消する。あわせて、ウィジェットのハードコード配色を CSS カスタムプロパティ経由に変え、利用側サイトがテーマを注入できる受け口を作る。
+内容: 実機検証で見つかった回答品質の問題（無回答原則が thoughts 経路にしか入っていない・Markdown 記法が生で表示される・口調がオフィスライク）をシステムプロンプト共通前文の再設計で解消する。あわせて、ウィジェットのハードコード配色を CSS カスタムプロパティ経由に変え、利用側サイトがテーマを注入できる受け口を作る。
 確認: npm run typecheck / npm run test
 
 ---
@@ -14,7 +14,7 @@ type: feat
 
 dogfooding 検証で確認された実害:
 
-1. works 経路の回答が「CAG（Chat with Augmented Generation）」という誤った展開語を創作した。`buildSystemPrompt`（packages/handler/src/chat/gemini.ts:4-13）で「書かれていないことは推測しない」が `thoughts` の経路別指示にしか無いことが原因。無回答原則は PLAN §3・JUDGE §1 の設計の核であり、全経路に効かなければならない。
+1. works 経路の回答が「CAG（Chat with Augmented Generation）」という誤った展開語を創作した。`buildSystemPrompt`（packages/handler/src/chat/gemini.ts:4-13）で「書かれていないことは推測しない」が `thoughts` の経路別指示にしか無いことが原因。無回答原則は PLAN §3・JUDGE §1 の設計の核であり、全経路に入っていなければならない。
 2. 回答に `**...**` などの Markdown 記法がそのまま表示される。ウィジェット（widget-element.ts の `#appendMessage`）は `textContent` によるプレーンテキスト描画であり、これは軽さの要件として変えない。プロンプト側で記法を禁止する。
 3. 「お問い合わせいただきありがとうございます」等の定型敬語で始まる長文になり、ポートフォリオの文脈に合わない。
 
@@ -38,7 +38,7 @@ dogfooding 検証で確認された実害:
 - トークンは6個: `--folio-agent-surface`（パネル背景）/ `--folio-agent-text`（本文）/ `--folio-agent-muted`（開示文などの補助テキスト）/ `--folio-agent-accent`（トグルボタン・ユーザー吹き出し・送信ボタン）/ `--folio-agent-accent-contrast`（accent 上の文字色）/ `--folio-agent-font`（フォントファミリ）
 - 記法例: `background: var(--folio-agent-surface, #fff);`
 - assistant 吹き出しの背景・境界線色は surface/text から派生させるか muted を使い、トークンを増やさない。
-- Shadow DOM はカスタムプロパティを host から継承するため、利用側はグローバル CSS で `folio-agent-widget { --folio-agent-accent: ...; }` を書くだけでテーマが効く。この使い方を styles.ts 冒頭のコメントに1〜2行で記す。
+- Shadow DOM はカスタムプロパティを host から継承するため、利用側はグローバル CSS で `folio-agent-widget { --folio-agent-accent: ...; }` を書くだけでテーマが変わる。この使い方を styles.ts 冒頭のコメントに1〜2行で記す。
 
 新規テスト `packages/widget/test/styles.test.ts`: `WIDGET_STYLES` に6トークンすべての `var(--folio-agent-*` 参照が含まれ、フォールバック無しの生色参照が残っていないことを検証する。
 

@@ -40,6 +40,6 @@ type: feat
 - `:host` で `color: inherit`・`color-scheme: inherit` とし、文字色・フォントはホスト継承を既定にする。
 - パネル面は `Canvas`、基本文字色は `CanvasText`（CSS システムカラー。`color-scheme` に追従するため、ダークサイトでは自動で暗い面になる）。
 - 吹き出し背景・境界線は `color-mix(in srgb, CanvasText 8%, Canvas)` のような導出色にする（訪問者側・アシスタント側で混合比を変えて区別する）。
-- 6トークン（surface / text / muted / accent / accent-contrast / font)は明示上書きの手段としてすべて残す。`var(--folio-agent-*, <導出既定>)` の形にし、指定があれば従来どおり効く。muted の役割は「補足テキストの文字色」に一本化し、吹き出し背景には使わない。
+- 6トークン（surface / text / muted / accent / accent-contrast / font)は明示上書きの手段としてすべて残す。`var(--folio-agent-*, <導出既定>)` の形にし、指定があれば従来どおりその値を使う。muted の役割は「補足テキストの文字色」に一本化し、吹き出し背景には使わない。
 - README の Usage §3 を「未指定でもサイトのライト/ダークに馴染む。変えたい場合のみトークンを上書き」という説明に書き換える。
 - 既定値の変更なのでバージョンは 0.2.0 に上げる（トークン指定済みの利用者には破壊にならないが、見た目の既定は変わる）。
