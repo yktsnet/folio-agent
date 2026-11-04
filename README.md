@@ -38,17 +38,17 @@ npx folio-agent-init --include "/,/works/**,/about" --contact-url https://exampl
 
 ```mermaid
 flowchart TD
-    Guard{"input_guard<br/>D1 でレート制限判定"}
-    Guard -->|"制限内"| Route["route_message<br/>キーワード分類"]
-    Guard -->|"超過"| Log["log"]
-    Route --> Generate{{"generate<br/>Gemini + knowledge.json"}}
-    Generate --> Check{"check_answer<br/>回答の形式を検査"}
+    Guard{"🛡️ input_guard<br/>D1 でレート制限判定"}
+    Guard -->|"制限内"| Route["🧭 route_message<br/>キーワード分類"]
+    Guard -->|"超過"| Log["📝 log"]
+    Route --> Generate{{"🤖 generate<br/>Gemini + knowledge.json"}}
+    Generate --> Check{"🔍 check_answer<br/>回答の形式を検査"}
     Check -->|"合っている"| Log
     Check -->|"違反（1回目）<br/>違反を指摘して作り直させる"| Generate
-    Check -->|"作り直しても違反"| Fallback["fallback<br/>文字だけにする"]
+    Check -->|"作り直しても違反"| Fallback["📃 fallback<br/>文字だけにする"]
     Fallback --> Log
-    Check -.->|"違反を記録"| Violations[("D1: answer_violations")]
-    Log --> D1[("D1: chat_logs")]
+    Check -.->|"違反を記録"| Violations[("🗄️ D1: answer_violations")]
+    Log --> D1[("🗄️ D1: chat_logs")]
 ```
 
 widget はクリックされるまで通信しない。配色はサイトのライト／ダークに自動で合わせ、変える場合も `surface` / `text` / `accent` の3色で足りる。
