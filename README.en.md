@@ -38,17 +38,17 @@ The full option list (`npx folio-agent-init --help`), manual setup, and details 
 
 ```mermaid
 flowchart TD
-    Guard{"input_guard<br/>rate limit check in D1"}
-    Guard -->|"within limit"| Route["route_message<br/>keyword routing"]
-    Guard -->|"exceeded"| Log["log"]
-    Route --> Generate{{"generate<br/>Gemini + knowledge.json"}}
-    Generate --> Check{"check_answer<br/>check the answer format"}
+    Guard{"🛡️ input_guard<br/>rate limit check in D1"}
+    Guard -->|"within limit"| Route["🧭 route_message<br/>keyword routing"]
+    Guard -->|"exceeded"| Log["📝 log"]
+    Route --> Generate{{"🤖 generate<br/>Gemini + knowledge.json"}}
+    Generate --> Check{"🔍 check_answer<br/>check the answer format"}
     Check -->|"complies"| Log
     Check -->|"violation (1st)<br/>point it out, regenerate"| Generate
-    Check -->|"still violates"| Fallback["fallback<br/>reduce to plain text"]
+    Check -->|"still violates"| Fallback["📃 fallback<br/>reduce to plain text"]
     Fallback --> Log
-    Check -.->|"record the violation"| Violations[("D1: answer_violations")]
-    Log --> D1[("D1: chat_logs")]
+    Check -.->|"record the violation"| Violations[("🗄️ D1: answer_violations")]
+    Log --> D1[("🗄️ D1: chat_logs")]
 ```
 
 The widget makes no network request until it is clicked. Its colors follow the site's light / dark scheme automatically, and three colors — `surface` / `text` / `accent` — are enough to change them.
