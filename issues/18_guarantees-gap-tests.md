@@ -59,7 +59,7 @@ type: feat
 
 テスト（`test/init/cli.test.ts`に追加）:
 - 一時ディレクトリで実行し、想定される回答一式を注入したとき、config json・テーマCSS・APIルート雛形・`.dev.vars`・`.gitignore`が実際に生成され、その内容が`test/init/writers.test.ts`で個別に検証済みの各関数の出力と整合することを確認する
-- 既存configがあるケース（`buildConfigJson`のプレビュー保持ロジックが効くケース）を最低1つ含める
+- 既存configがあるケース（`buildConfigJson`のプレビュー保持ロジックを通るケース）を最低1つ含める
 
 E2Eの網羅性より「CLIとして実際に動く」ことの確認が主目的のため、ケース数は実行者の判断で絞ってよい（自由度を残す）。
 
