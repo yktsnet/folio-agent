@@ -33,7 +33,7 @@ The full option list (`npx folio-agent-init --help`), manual setup, and details 
 
 ## How It Works
 
-- **Build time**: `folio-agent-ingest` picks pages from `dist/` and `knowledge/` (optionally Zenn articles) by URL glob, converts them to text, and writes `knowledge.json`, which ships in the same deployment as the site
+- **Build time**: `folio-agent-ingest` picks pages from `dist/` and `knowledge/` (optionally Zenn articles and the READMEs of GitHub repos linked from your pages) by URL glob, converts them to text, and writes `knowledge.json`, which ships in the same deployment as the site
 - **Runtime**: the widget sends `POST /api/chat`, and the handler processes it in this order
 
 ```mermaid
@@ -79,7 +79,7 @@ Only the key points. The full text, including what was rejected and when to revi
 **Supported**
 
 - Adding the chatbot to a static site that builds to `dist/` (Cloudflare Workers / Pages Functions)
-- Build-time knowledge ingestion (URL globs, supplementary Markdown, Zenn articles)
+- Build-time knowledge ingestion (URL globs, supplementary Markdown, Zenn articles, GitHub repo READMEs)
 - Per-IP rate limiting and logging to D1
 
 **Not supported**

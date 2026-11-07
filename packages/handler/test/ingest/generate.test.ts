@@ -1,7 +1,7 @@
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { generateKnowledge } from "../../src/ingest/generate.js";
 
 let root: string;
@@ -11,6 +11,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
   await rm(root, { recursive: true, force: true });
 });
 
@@ -134,5 +135,100 @@ describe("generateKnowledge", () => {
 
     expect(knowledge.pages.find((p) => p.source === "zenn")).toBeUndefined();
     expect(knowledge.warnings).toEqual([`articlesDir not found: ${articlesDir} — skipping zenn ingest`]);
+  });
+
+  describe("github", () => {
+    // README の本文を URL ごとに返す fetch。表に無いリポは 404
+    function stubReadmes(readmes: Record<string, string>) {
+      const fetchMock = vi.fn(async (input: string | URL | Request) => {
+        const slug = String(input).match(/repos\/([^/]+\/[^/]+)\/readme$/)?.[1] ?? "";
+        const body = readmes[slug];
+        return body === undefined ? new Response("Not Found", { status: 404 }) : new Response(body);
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      return fetchMock;
+    }
+
+    it("collects repos only from included, non-excluded pages and adds their READMEs", async () => {
+      await writeDistPage(
+        root,
+        "index.html",
+        "Home",
+        '<a href="https://github.com/alice/foo">foo</a><a href="https://github.com/alice/foo/tree/main/src">src</a><a href="https://github.com/alice">me</a>',
+      );
+      await writeDistPage(root, "works/draft-x/index.html", "Draft", '<a href="https://github.com/alice/draft">d</a>');
+      await writeDistPage(root, "contact.html", "Contact", '<a href="https://github.com/alice/contact">c</a>');
+      const fetchMock = stubReadmes({ "alice/foo": "Foo README" });
+
+      const knowledge = await generateKnowledge({
+        distDir: join(root, "dist"),
+        include: ["/", "/works/**"],
+        exclude: ["/works/draft-*"],
+        github: {},
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(knowledge.pages.filter((p) => p.source === "github")).toEqual([
+        { url: "https://github.com/alice/foo", source: "github", title: "alice/foo", text: "Foo README" },
+      ]);
+      expect(knowledge.warnings).toEqual([]);
+    });
+
+    it("uses the snapshot page for a repo whose README fetch failed", async () => {
+      await writeDistPage(root, "index.html", "Home", '<a href="https://github.com/alice/foo">foo</a>');
+      stubReadmes({});
+      const snapshotPath = join(root, "github-snapshot.json");
+      const snapshotPage = { url: "https://github.com/alice/foo", source: "github", title: "alice/foo", text: "Old" };
+      await writeFile(snapshotPath, JSON.stringify([snapshotPage]));
+
+      const knowledge = await generateKnowledge({ distDir: join(root, "dist"), include: ["/"], github: { snapshotPath } });
+
+      expect(knowledge.pages.filter((p) => p.source === "github")).toEqual([snapshotPage]);
+      expect(knowledge.warnings).toEqual([]);
+    });
+
+    it("skips and warns when the fetch failed and the snapshot has no page for the repo", async () => {
+      await writeDistPage(
+        root,
+        "index.html",
+        "Home",
+        '<a href="https://github.com/alice/foo">foo</a><a href="https://github.com/alice/bar">bar</a>',
+      );
+      stubReadmes({ "alice/bar": "Bar README" });
+      const snapshotPath = join(root, "github-snapshot.json");
+      await writeFile(snapshotPath, JSON.stringify([]));
+
+      const knowledge = await generateKnowledge({ distDir: join(root, "dist"), include: ["/"], github: { snapshotPath } });
+
+      expect(knowledge.pages.filter((p) => p.source === "github").map((p) => p.url)).toEqual([
+        "https://github.com/alice/bar",
+      ]);
+      expect(knowledge.warnings).toHaveLength(1);
+      expect(knowledge.warnings[0]).toContain("https://github.com/alice/foo");
+    });
+
+    it("counts README text in the estimated tokens", async () => {
+      await writeDistPage(root, "index.html", "Home", '<a href="https://github.com/alice/foo">foo</a>');
+      stubReadmes({ "alice/foo": "x".repeat(1000) });
+
+      const knowledge = await generateKnowledge({
+        distDir: join(root, "dist"),
+        include: ["/"],
+        github: {},
+        tokenWarningThreshold: 100,
+      });
+
+      expect(knowledge.warnings.some((w) => /exceeds the warning threshold/.test(w))).toBe(true);
+    });
+
+    it("never calls fetch when config.github is not set", async () => {
+      await writeDistPage(root, "index.html", "Home", '<a href="https://github.com/alice/foo">foo</a>');
+      const fetchMock = stubReadmes({ "alice/foo": "Foo README" });
+
+      const knowledge = await generateKnowledge({ distDir: join(root, "dist"), include: ["/"] });
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(knowledge.pages.map((p) => p.source)).toEqual(["dist"]);
+    });
   });
 });

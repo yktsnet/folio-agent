@@ -44,7 +44,7 @@ npx folio-agent-ingest folio-agent.config.json knowledge.json
 }
 ```
 
-`IngestConfig`（`distDir` / `include` / `exclude` / `knowledgeDir` / `zenn` / `tokenWarningThreshold`）は `@folio-agent/handler` から型で公開されている。`language` と `theme` は `folio-agent-init` が前回の値を保持するためのフィールドで、ingest 自体は読まない。init は、自分が扱わないフィールド（`exclude` / `knowledgeDir` / `zennSnapshotPath` など）を書き換えない。`knowledgeDir` に置いた Markdown は URL パスをミラーした構造で、include/exclude の対象外（明示配置したものだけが入る）。
+`IngestConfig`（`distDir` / `include` / `exclude` / `knowledgeDir` / `zenn` / `github` / `tokenWarningThreshold`）は `@folio-agent/handler` から型で公開されている。`language` と `theme` は `folio-agent-init` が前回の値を保持するためのフィールドで、ingest 自体は読まない。init は、自分が扱わないフィールド（`exclude` / `knowledgeDir` / `zennSnapshotPath` など）を書き換えない。`knowledgeDir` に置いた Markdown は URL パスをミラーした構造で、include/exclude の対象外（明示配置したものだけが入る）。
 
 Zenn 記事も知識に含める場合は `zenn` を指定する（省略すればスキップ）。zenn.dev への通信は行わず、Zenn CLI の `articles/` ディレクトリをローカルで読み、frontmatter が `published: true` の記事だけを取り込む:
 
@@ -78,6 +78,26 @@ npx folio-agent-sync-zenn folio-agent.config.json zenn-snapshot.json
 ```
 
 **フォールバック時に警告は出ない。** `articlesDir` も `zennSnapshotPath` も無い場合のみ warning が出る仕様のため、スナップショットが古いまま放置されてもビルドは成功し続け、知識だけが古くなる。CI 等で定期的に `folio-agent-sync-zenn` を回すか、古さを検知する手段を利用者側で持つこと。
+
+### GitHub リポの README
+
+サイトのページから GitHub のリポへリンクしているなら、`github` を指定すると、そのリポの README も知識に入る（省略すればスキップ）。include の対象ページ（exclude 適用後）にある `https://github.com/<owner>/<repo>` へのリンクを拾い、リポごとに README を1ページとして取り込む。タイトルは `<owner>/<repo>`、URL はリポの URL になる。`github` を指定すれば、リポごとの設定は要らず、サイトに載せたリポが取り込まれる:
+
+```json
+{
+  "github": {
+    "snapshotPath": "github-snapshot.json"
+  }
+}
+```
+
+**Zenn と違い、GitHub はビルド時に通信する。** `github` を指定したときだけ、GitHub REST API の `GET /repos/{owner}/{repo}/readme` でリポの既定の README を取る。環境変数 `GITHUB_TOKEN` があれば認証に使う。未認証でも 60 回/時まで呼べるので、ビルド1回には足りる。public リポだけが対象になる。
+
+README を取れなかったリポは、`snapshotPath` の JSON に同じ URL のページがあればそれで補う。無ければそのリポを飛ばし、warning に出す。どちらの場合もビルドは止まらない。スナップショットは `folio-agent-sync-github` で作る。取れなかったリポはスナップショットに書かず、標準エラーに出す。スナップショットはリポにコミットして使う。`folio-agent-sync-github` はビルド済みの `distDir` のリンクからリポを集めるので、サイトをビルドしてから実行する:
+
+```bash
+npx folio-agent-sync-github folio-agent.config.json github-snapshot.json
+```
 
 ## 2. Chat Handler (Pages Function / Worker)
 

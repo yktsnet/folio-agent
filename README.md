@@ -33,7 +33,7 @@ npx folio-agent-init --include "/,/works/**,/about" --contact-url https://exampl
 
 ## How It Works
 
-- **ビルド時**: `folio-agent-ingest` が `dist/` と `knowledge/`（任意で Zenn 記事）から URL グロブで対象を選び、テキストにして `knowledge.json` へ書き出す。サイトと同じデプロイに同梱される
+- **ビルド時**: `folio-agent-ingest` が `dist/` と `knowledge/`（任意で Zenn 記事と、ページからリンクした GitHub リポの README）から URL グロブで対象を選び、テキストにして `knowledge.json` へ書き出す。サイトと同じデプロイに同梱される
 - **実行時**: widget が `POST /api/chat` を送り、handler が次の順に処理する
 
 ```mermaid
@@ -79,7 +79,7 @@ widget はクリックされるまで通信しない。配色はサイトのラ�
 **対応する**
 
 - ビルドで `dist/` を出力する静的サイトへのチャットボットの組み込み（Cloudflare Workers / Pages Functions）
-- ビルド時の知識の取り込み（URL グロブ・補足の Markdown・Zenn 記事）
+- ビルド時の知識の取り込み（URL グロブ・補足の Markdown・Zenn 記事・GitHub リポの README）
 - IP 単位のレート制限と D1 へのログ
 
 **対応しない**

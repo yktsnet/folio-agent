@@ -108,6 +108,9 @@
 - zenn設定時、公開済みZenn記事を知識に含める
 - articlesDir不在かつzennSnapshotPath設定時はスナップショットにフォールバックする
 - articlesDir不在かつスナップショット未設定時はzenn取り込みをスキップしwarningsに記録する
+- github設定時、include対象ページ（exclude適用後）のリンクから集めたリポのREADMEを`url: https://github.com/<owner>/<repo>`・`source: "github"`・`title: <owner>/<repo>`のページとして知識に含める。READMEも見積もりトークン数に含める
+- READMEの取得に失敗したリポは`github.snapshotPath`の同じURLのページで補い、無ければ飛ばしてwarningsに記録する。どちらもビルドは止まらない
+- github未設定時はGitHubへ通信しない
 
 | 保証（要約） | 対応テスト |
 |---|---|
@@ -117,6 +120,11 @@
 | Zenn記事の取り込み | `includes published Zenn articles when zenn config is set` |
 | スナップショットへのフォールバック | `falls back to zennSnapshotPath when articlesDir does not exist` |
 | スナップショット未設定時のスキップ+警告 | `warns and skips zenn ingest when articlesDir does not exist and no snapshot is configured` |
+| include/exclude対象ページからのREADME取り込み | `describe("github")` > `collects repos only from included, non-excluded pages and adds their READMEs` |
+| 取得失敗時にスナップショットのページで補う | `describe("github")` > `uses the snapshot page for a repo whose README fetch failed` |
+| 取得失敗かつスナップショットに無いときのスキップ+警告 | `describe("github")` > `skips and warns when the fetch failed and the snapshot has no page for the repo` |
+| READMEを見積もりトークン数に含める | `describe("github")` > `counts README text in the estimated tokens` |
+| github未設定時は通信しない | `describe("github")` > `never calls fetch when config.github is not set` |
 
 ### 7. `packages/handler/test/ingest/glob.test.ts` — packages/handler/src/ingest/glob.ts (createUrlMatcher)
 
@@ -271,6 +279,32 @@
 |---|---|
 | 初回の送信内容 | `sends the visitor's message alone on the first attempt` |
 | 作り直しの会話 | `sends the question, the previous answer and the correction request as a conversation when correcting` |
+
+### 17. `packages/handler/test/ingest/github.test.ts` — packages/handler/src/ingest/github.ts (collectGithubRepos / fetchGithubReadme)
+
+- HTMLの`<a href>`から`https://github.com/<owner>/<repo>`形式のリポを重複なく集め、`/tree/...`などの下位パスはリポ単位にまとめる
+- プロフィール（`github.com/<owner>`）・予約パス・github.com以外へのリンクは集めない
+- READMEを`GET /repos/{owner}/{repo}/readme`（`Accept: application/vnd.github.raw`）で取り、環境変数`GITHUB_TOKEN`があればAuthorizationヘッダを付ける
+
+| 保証（要約） | 対応テスト |
+|---|---|
+| 重複除去・下位パスの正規化 | `collects repo links without duplicates, normalizing sub-paths to the repo` |
+| プロフィール・github.com以外を除外 | `ignores profile links, reserved paths, and non-GitHub links` |
+| READMEの取得とページ化 | `fetches the raw README and returns it as a github page` |
+| GITHUB_TOKENの付与 | `sends an Authorization header when GITHUB_TOKEN is set` |
+| 取得失敗時の例外 | `throws when the README request fails` |
+
+### 18. `packages/handler/test/sync/github-cli.test.ts` — packages/handler/src/sync/github-cli.ts (syncGithubSnapshot / folio-agent-sync-github CLI)
+
+- ingestと同じ集め方・取り方で、READMEを取得できたリポだけをKnowledgePage[]としてJSON出力し、失敗したリポは標準エラーに出す
+- config.github未設定時は例外を投げる
+- npmがnode_modules/.bin/に張るシンボリックリンク経由で実行された場合もmain()を実行し、スナップショットを書き出す
+
+| 保証（要約） | 対応テスト |
+|---|---|
+| 成功したリポのみをJSON出力 | `writes only repos whose README was fetched, and reports failures on stderr` |
+| github未設定時の例外 | `throws when config.github is not set` |
+| binシンボリックリンク経由でのmain()実行 | `describe("folio-agent-sync-github CLI (bin symlink execution)")` > `runs main() and writes the output file when invoked via a bin-style symlink` |
 
 ## About
 
