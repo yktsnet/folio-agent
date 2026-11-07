@@ -31,9 +31,22 @@ npx folio-agent-init --include "/,/works/**,/about" --contact-url https://exampl
 
 The full option list (`npx folio-agent-init --help`), manual setup, and details on the config, handler, and widget are in [docs/usage.en.md](docs/usage.en.md). To hand the setup to an AI agent, this README and docs/usage.en.md are all it needs to read.
 
+## What It Reads
+
+On every build, folio-agent gathers the following into its knowledge. When you update the site, the knowledge follows, so you don't write a separate script for the chatbot.
+
+| Source | How it is gathered | Setting |
+|---|---|---|
+| Site pages | HTML in the built `dist/`, picked by URL glob | `include` / `exclude` |
+| Supplementary Markdown | Placed in `knowledge/`, mirroring URL paths | `knowledgeDir` |
+| Zenn articles | Published articles read from the Zenn CLI `articles/` directory, with no network request | `zenn` |
+| GitHub repo READMEs | Repos linked from your pages, with their READMEs fetched. Putting a repo on your site is enough | `github` |
+
+Zenn and GitHub are optional; omit them and they are not read. See "1. Knowledge Generation" in [docs/usage.en.md](docs/usage.en.md) for the settings.
+
 ## How It Works
 
-- **Build time**: `folio-agent-ingest` picks pages from `dist/` and `knowledge/` (optionally Zenn articles and the READMEs of GitHub repos linked from your pages) by URL glob, converts them to text, and writes `knowledge.json`, which ships in the same deployment as the site
+- **Build time**: `folio-agent-ingest` converts the sources in the table above to text and writes `knowledge.json`, which ships in the same deployment as the site
 - **Runtime**: the widget sends `POST /api/chat`, and the handler processes it in this order
 
 ```mermaid
@@ -79,7 +92,7 @@ Only the key points. The full text, including what was rejected and when to revi
 **Supported**
 
 - Adding the chatbot to a static site that builds to `dist/` (Cloudflare Workers / Pages Functions)
-- Build-time knowledge ingestion (URL globs, supplementary Markdown, Zenn articles, GitHub repo READMEs)
+- Build-time knowledge ingestion (the four sources in [What It Reads](#what-it-reads))
 - Per-IP rate limiting and logging to D1
 
 **Not supported**

@@ -31,9 +31,22 @@ npx folio-agent-init --include "/,/works/**,/about" --contact-url https://exampl
 
 引数の一覧（`npx folio-agent-init --help`）、手で設定する手順、config・handler・widget の詳細は [docs/usage.md](docs/usage.md) にある。導入を AI エージェントに任せる場合も、この README と docs/usage.md を読ませれば足りる。
 
+## What It Reads
+
+ビルドのたびに、次のものを集めて知識にする。サイトを更新すれば知識も追従するので、チャットボット用に別の原稿は要らない。
+
+| 読むもの | 集め方 | 設定 |
+|---|---|---|
+| サイトのページ | ビルド済みの `dist/` の HTML を、URL グロブで選ぶ | `include` / `exclude` |
+| 補足の Markdown | `knowledge/` に、URL パスと同じ構造で置く | `knowledgeDir` |
+| Zenn の記事 | Zenn CLI の `articles/` から、公開済みの記事を読む。通信はしない | `zenn` |
+| GitHub リポの README | サイトのページからリンクしたリポを拾い、README を取る。リポをサイトに載せるだけで入る | `github` |
+
+Zenn と GitHub は省略でき、省略すれば読まない。設定の書き方は [docs/usage.md](docs/usage.md) の「1. Knowledge Generation」にある。
+
 ## How It Works
 
-- **ビルド時**: `folio-agent-ingest` が `dist/` と `knowledge/`（任意で Zenn 記事と、ページからリンクした GitHub リポの README）から URL グロブで対象を選び、テキストにして `knowledge.json` へ書き出す。サイトと同じデプロイに同梱される
+- **ビルド時**: `folio-agent-ingest` が上の表のものをテキストにして `knowledge.json` へ書き出す。サイトと同じデプロイに同梱される
 - **実行時**: widget が `POST /api/chat` を送り、handler が次の順に処理する
 
 ```mermaid
@@ -79,7 +92,7 @@ widget はクリックされるまで通信しない。配色はサイトのラ�
 **対応する**
 
 - ビルドで `dist/` を出力する静的サイトへのチャットボットの組み込み（Cloudflare Workers / Pages Functions）
-- ビルド時の知識の取り込み（URL グロブ・補足の Markdown・Zenn 記事・GitHub リポの README）
+- ビルド時の知識の取り込み（[What It Reads](#what-it-reads) の4つ）
 - IP 単位のレート制限と D1 へのログ
 
 **対応しない**
