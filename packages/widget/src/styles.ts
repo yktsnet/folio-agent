@@ -118,14 +118,15 @@ export const WIDGET_STYLES = `
 
   .header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
-    padding: 14px 12px 12px 18px;
+    padding: 16px 14px 14px 20px;
     border-bottom: 1px solid var(--_hair);
   }
   .titles {
     flex: 1;
     min-width: 0;
+    margin-right: 8px;
   }
   .heading {
     font-size: 15px;
@@ -133,8 +134,9 @@ export const WIDGET_STYLES = `
     line-height: 1.3;
   }
   .subheading {
+    margin-top: 4px;
     font-size: 12px;
-    line-height: 1.4;
+    line-height: 1.6;
     color: var(--_muted);
   }
   .close,
@@ -348,7 +350,7 @@ export const WIDGET_STYLES = `
       transform: translateY(32px);
     }
     .header {
-      padding-top: calc(12px + env(safe-area-inset-top, 0px));
+      padding-top: calc(16px + env(safe-area-inset-top, 0px));
     }
   }
 
