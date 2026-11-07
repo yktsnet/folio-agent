@@ -1,7 +1,62 @@
+## PR記録: feat: ingest READMEs of GitHub repos linked from site pages
+issue: 21 (21_github-readme-ingest.md)
+PR: https://github.com/yktsnet/folio-agent/pull/84
+
+## 変更内容
+`config.github` を設定したとき、ingest が include の対象ページ（exclude 適用後）の HTML から `https://github.com/<owner>/<repo>` へのリンクを拾い、各リポの README を GitHub REST API（`GET /repos/{owner}/{repo}/readme`、`Accept: application/vnd.github.raw`、`GITHUB_TOKEN` があれば認証）で取得して、`source: "github"`・`title: <owner>/<repo>` のページとして knowledge に入れる。取得に失敗したリポは `github.snapshotPath` の同じ URL のページで補い、無ければ飛ばして warnings に記録する。スナップショットを書き出す CLI `folio-agent-sync-github` を新設した。`config.github` が無ければ通信しない。usage（日英）・README（日英）・structure.md・保証台帳を更新した。
+
+## 保証
+- リポを重複なく集め、下位パスを正規化し、プロフィール等を除く → test/ingest/github.test.ts `collects repo links without duplicates, normalizing sub-paths to the repo` / `ignores profile links, reserved paths, and non-GitHub links`、test/ingest/generate.test.ts `collects repos only from included, non-excluded pages and adds their READMEs`
+- README を url / source / title / text のページとして含める → github.test.ts `fetches the raw README and returns it as a github page`、generate.test.ts 同上
+- 取得失敗時のスナップショットでの補い／スキップと警告 → generate.test.ts `uses the snapshot page for a repo whose README fetch failed` / `skips and warns when the fetch failed and the snapshot has no page for the repo`
+- 未設定時は通信しない → generate.test.ts `never calls fetch when config.github is not set`
+- GITHUB_TOKEN の付与 → github.test.ts `sends an Authorization header when GITHUB_TOKEN is set`
+- README も見積もりトークンに含める → generate.test.ts `counts README text in the estimated tokens`
+- sync CLI → test/sync/github-cli.test.ts の全3テスト
+- 維持する保証 → 既存テストがすべて通る
+
+## 静的確認結果
+- npm run typecheck: 成功
+- npm run test: 25 ファイル・218 テスト成功（build 後のため bin シンボリックリンクの試験も実行）
+- git diff --name-only --cached: README.en.md README.md context/structure.md docs/guarantees.md docs/usage.en.md docs/usage.md packages/handler/package.json packages/handler/src/ingest/generate.ts packages/handler/src/ingest/github.ts packages/handler/src/ingest/types.ts packages/handler/src/sync/github-cli.ts packages/handler/test/ingest/generate.test.ts packages/handler/test/ingest/github.test.ts packages/handler/test/sync/github-cli.test.ts（Issue の対象と一致）
+
+## 検証手順
+1. portfolio-astro で config に `"github": {}` を足してビルドし、knowledge.json にリンク先のリポの README（`source: "github"`）が入ることを確かめる
+2. dev ハーネスか本番で、リポについて尋ね、README の内容とリポへのリンクで答えることを確かめる
+
+3. `npm run eval` は未実行（この環境に `.dev.vars` の Gemini キーが無い）。マージ前に `--knowledge` に 1 の knowledge.json を渡し、リポについての質問で実行する
+
+## 補足
+- `github.snapshotPath` のファイルが無いとき（sync を流す前の初回のビルド）は空のスナップショットとして扱い、各リポを warnings に記録して続ける（テスト `skips and warns without stopping when snapshotPath is unset or its file does not exist`）
+- リポのリンクは `https://github.com/` に加え、`http://` と `www.github.com` も拾って `https://github.com/<owner>/<repo>` に正規化する（user 了承済み）
+
+## 確認者の判定
+| # | 項目（要約） | 判定 |
+|---|---|---|
+| 1 | include 対象ページのリンクからリポを集め、重複を除き、下位パスをまとめる | 合 |
+| 2 | exclude・include 外のページのリンクは集めない | 合 |
+| 3 | プロフィールや github.com 以外へのリンクは集めない | 合 |
+| 4 | README が url / source / title / text で入る | 合 |
+| 5 | 取得失敗時、スナップショットに同じ URL があれば使う | 合 |
+| 6 | 取得失敗かつスナップショットに無ければ飛ばして warnings に記録 | 合 |
+| 7 | `config.github` 未設定なら fetch を呼ばない | 合 |
+| 8 | `GITHUB_TOKEN` があれば Authorization を付ける | 合 |
+| 9 | sync CLI（成功分のみ書き出し・未設定で例外・bin 経由で動く） | 合 |
+| - | 型・全テスト（218 件） | 合 |
+| - | 保証・維持する保証・台帳 | 合 |
+
+## 手戻り
+
+| 何が起きたか | 失ったもの | 原因の分類 | 仕組みで防げたか |
+|---|---|---|---|
+| 確認者の「否」：`snapshotPath` のファイルが無いと ENOENT でビルドが止まり、「ビルドは止まらない」の保証に反した。既存の Zenn の読み方をそのまま写していた | 1回。約5分 | 実装者の不注意 | 防げない |
+
+---
+
 ## ingest: サイトからリンクした GitHub リポの README を知識に取り込む
 id: 21
 branch-slug: github-readme-ingest
-status: open
+status: close
 type: feat
 対象: packages/handler/src/ingest/github.ts (新規), packages/handler/src/ingest/generate.ts, packages/handler/src/ingest/types.ts, packages/handler/src/sync/github-cli.ts (新規), packages/handler/package.json, packages/handler/test/ingest/github.test.ts (新規), packages/handler/test/ingest/generate.test.ts, packages/handler/test/sync/github-cli.test.ts (新規), docs/guarantees.md, docs/usage.md, docs/usage.en.md, context/structure.md, README.md, README.en.md
 目的: 訪問者がサイトに載ったリポについて尋ねたとき、エージェントがサイト本文の1〜2行の説明しか持たず答えられない状態を変える。include の対象ページからリンクしたリポの README を知識に入れ、README の中身で答え、リポへのリンクを添えられるようにする。リポをサイトに足すだけで知識が追従し、別の設定を足さなくて済むようにする。
