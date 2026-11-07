@@ -18,6 +18,11 @@ export interface IngestConfig {
    * separate/private repo that isn't checked out).
    */
   zennSnapshotPath?: string;
+  /**
+   * READMEs of GitHub repos linked from the included pages. Omit to keep ingest offline
+   * (no request is made to GitHub).
+   */
+  github?: GithubIngestConfig;
   /** Token threshold above which the CLI warns that CAG may no longer fit. */
   tokenWarningThreshold?: number;
   /** UI language captured by `folio-agent-init`. Ignored by ingest itself. */
@@ -42,7 +47,15 @@ export interface ZennIngestConfig {
   baseUrl: string;
 }
 
-export type KnowledgeSource = "dist" | "knowledge" | "zenn";
+export interface GithubIngestConfig {
+  /**
+   * Path to a snapshot JSON produced by `folio-agent-sync-github`. Used in place of repos
+   * whose README could not be fetched.
+   */
+  snapshotPath?: string;
+}
+
+export type KnowledgeSource = "dist" | "knowledge" | "zenn" | "github";
 
 export interface KnowledgePage {
   url: string;

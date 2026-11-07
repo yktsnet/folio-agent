@@ -18,7 +18,11 @@ folio-agent/
 │   │   │   │   ├── html-to-text.ts   # HTML → テキスト抽出（node-html-parser）
 │   │   │   │   ├── token-count.ts    # トークン量の概算・上限警告
 │   │   │   │   ├── format.ts         # formatKnowledge（知識をタイトル・URL 付きでプロンプト用に整形）
+│   │   │   │   ├── github.ts         # ページのリンクから GitHub リポを集め、README を取得（config.github 設定時だけ通信）
 │   │   │   │   └── types.ts          # IngestConfig / KnowledgeDocument など
+│   │   │   ├── sync/         # スナップショットを書き出す CLI（Node で実行）
+│   │   │   │   ├── cli.ts            # bin: folio-agent-sync-zenn <config.json> <output.json>
+│   │   │   │   └── github-cli.ts     # bin: folio-agent-sync-github <config.json> <output.json>（サイトのビルド後に実行）
 │   │   │   ├── init/         # セットアップ CLI（Node で実行。引数のみで対話なし）
 │   │   │   │   ├── cli.ts            # bin: folio-agent-init（計画の表示と書き込み）
 │   │   │   │   ├── options.ts        # 引数の解釈・前回 config との合成・入力バリデーション・テーマプリセット

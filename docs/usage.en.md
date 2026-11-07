@@ -44,7 +44,7 @@ npx folio-agent-ingest folio-agent.config.json knowledge.json
 }
 ```
 
-`IngestConfig` (`distDir` / `include` / `exclude` / `knowledgeDir` / `zenn` / `tokenWarningThreshold`) is exported as a type from `@folio-agent/handler`. `language` and `theme` are fields `folio-agent-init` uses to keep its previous values; ingest itself does not read them. init never rewrites fields it doesn't manage (`exclude` / `knowledgeDir` / `zennSnapshotPath`, and so on). Markdown placed in `knowledgeDir` mirrors URL paths and is not subject to include/exclude (only what you place there is included).
+`IngestConfig` (`distDir` / `include` / `exclude` / `knowledgeDir` / `zenn` / `github` / `tokenWarningThreshold`) is exported as a type from `@folio-agent/handler`. `language` and `theme` are fields `folio-agent-init` uses to keep its previous values; ingest itself does not read them. init never rewrites fields it doesn't manage (`exclude` / `knowledgeDir` / `zennSnapshotPath`, and so on). Markdown placed in `knowledgeDir` mirrors URL paths and is not subject to include/exclude (only what you place there is included).
 
 To include Zenn articles as knowledge, set `zenn` (omit it to skip). No request is made to zenn.dev: ingest reads the Zenn CLI `articles/` directory locally and takes only articles whose frontmatter has `published: true`:
 
@@ -78,6 +78,27 @@ npx folio-agent-sync-zenn folio-agent.config.json zenn-snapshot.json
 ```
 
 **The fallback emits no warning.** A warning appears only when neither `articlesDir` nor `zennSnapshotPath` exists, so a stale snapshot keeps the build green while the knowledge quietly ages. Run `folio-agent-sync-zenn` regularly (e.g. in CI), or have your own way to detect staleness.
+
+
+### GitHub repo READMEs
+
+If your pages link to GitHub repos, set `github` to add those repos' READMEs to the knowledge (omit it to skip). Ingest picks up links of the form `https://github.com/<owner>/<repo>` on the included pages (after exclude) and adds one page per repo, titled `<owner>/<repo>` with the repo URL as its URL. With `github` set, no per-repo setting is needed: repos you put on your site are picked up:
+
+```json
+{
+  "github": {
+    "snapshotPath": "github-snapshot.json"
+  }
+}
+```
+
+**Unlike Zenn, GitHub ingestion makes network requests at build time.** Only when `github` is set, ingest fetches each repo's default README through the GitHub REST API `GET /repos/{owner}/{repo}/readme`. If the `GITHUB_TOKEN` environment variable is set, it is used for authentication; unauthenticated calls allow 60 requests per hour, enough for one build. Only public repos are supported.
+
+For a repo whose README could not be fetched, ingest uses the page with the same URL from the `snapshotPath` JSON if there is one; otherwise it skips the repo and adds a warning. The build continues either way. Generate the snapshot with `folio-agent-sync-github`; repos that could not be fetched are left out of it and reported on stderr. Commit the snapshot to your repo. Repos are collected from links in the built `distDir`, so run it after building the site:
+
+```bash
+npx folio-agent-sync-github folio-agent.config.json github-snapshot.json
+```
 
 ## 2. Chat Handler (Pages Function / Worker)
 

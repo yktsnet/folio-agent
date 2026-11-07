@@ -1,4 +1,5 @@
 import { readFile, stat } from "node:fs/promises";
+import { collectGithubRepos, fetchGithubReadmes } from "./github.js";
 import { createUrlMatcher } from "./glob.js";
 import { htmlToText } from "./html-to-text.js";
 import { readTextFile, scanDist, scanKnowledgeDir } from "./scan-dist.js";
@@ -21,9 +22,12 @@ export async function generateKnowledge(config: IngestConfig): Promise<Knowledge
   const pages: KnowledgePage[] = [];
   const warnings: string[] = [];
 
+  const githubRepos = new Set<string>();
+
   const distFiles = await scanDist(config.distDir);
   for (const file of distFiles.filter((f) => matchesUrl(f.urlPath))) {
     const html = await readTextFile(file.absolutePath);
+    if (config.github) for (const repo of collectGithubRepos(html)) githubRepos.add(repo);
     const { title, text } = htmlToText(html);
     pages.push({ url: file.urlPath, source: "dist", title, text });
   }
@@ -44,6 +48,27 @@ export async function generateKnowledge(config: IngestConfig): Promise<Knowledge
       pages.push(...snapshot);
     } else {
       warnings.push(`articlesDir not found: ${config.zenn.articlesDir} — skipping zenn ingest`);
+    }
+  }
+
+  if (config.github) {
+    const { pages: githubPages, failures } = await fetchGithubReadmes(githubRepos);
+    pages.push(...githubPages);
+    if (failures.length > 0) {
+      // 初回のビルドではまだスナップショットが無いことがある。無ければ空として扱い、各リポを警告に回す
+      const snapshotPath = config.github.snapshotPath;
+      const snapshot =
+        snapshotPath && (await pathExists(snapshotPath))
+          ? (JSON.parse(await readFile(snapshotPath, "utf-8")) as KnowledgePage[])
+          : [];
+      for (const failure of failures) {
+        const fallback = snapshot.find((p) => p.url === failure.repoUrl);
+        if (fallback) {
+          pages.push(fallback);
+        } else {
+          warnings.push(`${failure.error} — skipping ${failure.repoUrl}`);
+        }
+      }
     }
   }
 
