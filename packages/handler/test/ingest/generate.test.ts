@@ -207,6 +207,19 @@ describe("generateKnowledge", () => {
       expect(knowledge.warnings[0]).toContain("https://github.com/alice/foo");
     });
 
+    it("skips and warns without stopping when snapshotPath is unset or its file does not exist", async () => {
+      await writeDistPage(root, "index.html", "Home", '<a href="https://github.com/alice/foo">foo</a>');
+      stubReadmes({});
+
+      for (const github of [{}, { snapshotPath: join(root, "missing.json") }]) {
+        const knowledge = await generateKnowledge({ distDir: join(root, "dist"), include: ["/"], github });
+
+        expect(knowledge.pages.map((p) => p.source)).toEqual(["dist"]);
+        expect(knowledge.warnings).toHaveLength(1);
+        expect(knowledge.warnings[0]).toContain("https://github.com/alice/foo");
+      }
+    });
+
     it("counts README text in the estimated tokens", async () => {
       await writeDistPage(root, "index.html", "Home", '<a href="https://github.com/alice/foo">foo</a>');
       stubReadmes({ "alice/foo": "x".repeat(1000) });

@@ -55,9 +55,12 @@ export async function generateKnowledge(config: IngestConfig): Promise<Knowledge
     const { pages: githubPages, failures } = await fetchGithubReadmes(githubRepos);
     pages.push(...githubPages);
     if (failures.length > 0) {
-      const snapshot = config.github.snapshotPath
-        ? (JSON.parse(await readFile(config.github.snapshotPath, "utf-8")) as KnowledgePage[])
-        : [];
+      // 初回のビルドではまだスナップショットが無いことがある。無ければ空として扱い、各リポを警告に回す
+      const snapshotPath = config.github.snapshotPath;
+      const snapshot =
+        snapshotPath && (await pathExists(snapshotPath))
+          ? (JSON.parse(await readFile(snapshotPath, "utf-8")) as KnowledgePage[])
+          : [];
       for (const failure of failures) {
         const fallback = snapshot.find((p) => p.url === failure.repoUrl);
         if (fallback) {

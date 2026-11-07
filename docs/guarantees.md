@@ -123,6 +123,7 @@
 | include/exclude対象ページからのREADME取り込み | `describe("github")` > `collects repos only from included, non-excluded pages and adds their READMEs` |
 | 取得失敗時にスナップショットのページで補う | `describe("github")` > `uses the snapshot page for a repo whose README fetch failed` |
 | 取得失敗かつスナップショットに無いときのスキップ+警告 | `describe("github")` > `skips and warns when the fetch failed and the snapshot has no page for the repo` |
+| snapshotPath未設定・ファイル不在でも止まらずスキップ+警告 | `describe("github")` > `skips and warns without stopping when snapshotPath is unset or its file does not exist` |
 | READMEを見積もりトークン数に含める | `describe("github")` > `counts README text in the estimated tokens` |
 | github未設定時は通信しない | `describe("github")` > `never calls fetch when config.github is not set` |
 
