@@ -40,14 +40,14 @@
     "prepublishOnly": "tsc -b --force"
   },
   "dependencies": {
-    "@google/genai": "^2.31.0",
-    "@langchain/langgraph": "^1.5.2",
-    "node-html-parser": "^9.0.5",
+    "@google/genai": "^2.32.0",
+    "@langchain/langgraph": "^1.6.0",
+    "node-html-parser": "^9.0.6",
     "picomatch": "^4.0.7"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261025.1",
+    "@cloudflare/workers-types": "^5.20261101.1",
     "@types/picomatch": "^4.0.2",
-    "wrangler": "^4.152.0"
+    "wrangler": "^4.156.0"
   }
 }
