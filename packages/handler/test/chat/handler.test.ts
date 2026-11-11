@@ -82,6 +82,19 @@ describe("createChatHandler", () => {
     expect(await response.json()).toEqual({ answer: "hello there", route: "works" });
   });
 
+  it("counts a request without CF-Connecting-IP under the ip \"unknown\"", async () => {
+    const handle = createChatHandler({
+      db: createFakeD1(),
+      generateAnswer: vi.fn().mockResolvedValue("ok"),
+      rateLimitConfig: { shortWindowMinutes: 10, shortWindowMax: 1, longWindowHours: 12, longWindowMax: 10 },
+    });
+
+    await handle(request({ message: "hi" }));
+    const second = await handle(request({ message: "hi again" }, { "CF-Connecting-IP": "unknown" }));
+
+    expect(((await second.json()) as { route: string }).route).toBe("rate_limited");
+  });
+
   it("enforces the rate limit across requests from the same IP", async () => {
     const db = createFakeD1();
     const handle = createChatHandler({

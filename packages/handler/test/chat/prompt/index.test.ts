@@ -105,6 +105,16 @@ describe("buildSystemPrompt", () => {
       expect(prompt).toContain("write it exactly like this: [Contact page](https://example.com/contact)");
     });
 
+    it.each(ROUTES)("includes the paragraph-break instruction in English for %s", (route) => {
+      const prompt = buildSystemPrompt("knowledge body", route, undefined, "en");
+      expect(prompt).toContain("insert a blank line every 2-4 sentences to break it into paragraphs");
+    });
+
+    it("guides to the Contact page in English when contactUrl is not provided", () => {
+      const inquiry = buildSystemPrompt("knowledge body", "inquiry", undefined, "en");
+      expect(inquiry).toContain("guide them to contact via the Contact page.");
+    });
+
     it("does not leak Japanese wording into English prompts", () => {
       const prompt = buildSystemPrompt("knowledge body", "inquiry", undefined, "en");
       expect(prompt).not.toContain("知識");
