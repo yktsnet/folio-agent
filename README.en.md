@@ -101,7 +101,7 @@ Only the key points. The full text, including what was rejected and when to revi
 - Authentication, saved conversations, languages other than ja / en
 - Answering what the knowledge doesn't cover (it declines and points to Contact)
 
-What the public API guarantees is listed in [docs/guarantees.md](docs/guarantees.md) (Japanese).
+What the public API guarantees is listed in [docs/guarantees/](docs/guarantees/README.md) (Japanese).
 
 ## Development
 
