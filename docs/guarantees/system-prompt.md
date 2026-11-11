@@ -31,4 +31,6 @@
 | `language` が `"en"` なら、経路ごとの指示を英語で出し分ける | `language: en > switches route-specific instructions per route in English` |
 | `language` が `"en"` なら、inquiry の指示に `contactUrl` を英語の案内とともに埋め込む | `language: en > embeds contactUrl into the English inquiry instruction when provided` |
 | `language` が `"en"` なら、Contact へのリンクの見本（`[Contact page](URL)`）を英語で含める | `language: en > gives the Contact link example in English` |
+| `language` が `"en"` なら、どの経路でも段落分けの指示を英語で含む | `language: en > includes the paragraph-break instruction in English for %s` |
+| `language` が `"en"` なら、inquiry の指示は `contactUrl` が無ければ問い合わせの案内を英語で含む | `language: en > guides to the Contact page in English when contactUrl is not provided` |
 | `language` が `"en"` なら、プロンプトに日本語の文言を混ぜない | `language: en > does not leak Japanese wording into English prompts` |

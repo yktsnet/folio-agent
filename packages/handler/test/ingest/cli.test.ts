@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { main } from "../../src/ingest/cli.js";
 
 // The compiled bin entry point. Only present after `npm run build`; the
@@ -55,6 +55,18 @@ describe("folio-agent-ingest main", () => {
 
     expect(process.exitCode).toBe(1);
     await expect(readFile(outputPath, "utf-8")).rejects.toThrow();
+  });
+
+  it("prints the usage to stderr when arguments are missing", async () => {
+    process.argv = ["node", "cli.js"];
+    const stderr = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      await main();
+      expect(stderr).toHaveBeenCalledWith(expect.stringContaining("usage: folio-agent-ingest"));
+    } finally {
+      stderr.mockRestore();
+    }
   });
 });
 

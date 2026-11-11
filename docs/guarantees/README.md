@@ -36,9 +36,3 @@
 | [widget-element](widget-element.md) |
 | [widget-styles](widget-styles.md) |
 
-## Gaps
-
-- `buildSystemPrompt` は `language` が `"en"` でも、段落分けの指示と、`contactUrl` が無いときの問い合わせの案内を英語で含める。英語のテストは無捏造・プレーンテキスト・リンクの書き方・経路ごとの指示・Contact だけを確かめている
-- `buildChatGraph` は `language` が `"en"` なら、回答を英語で生成させる。テストは英語の入力の分類と生成の呼び出しだけを確かめ、生成に英語を指示したかは確かめていない
-- `createChatHandler` は `CF-Connecting-IP` ヘッダが無いリクエストの IP を `"unknown"` として扱う。テストは例外を投げずに 200 を返すことだけを確かめている
-- `folio-agent-ingest` は引数が欠けていれば、標準エラーに使い方を出す。テストは `process.exitCode` と書き出さないことだけを確かめている
