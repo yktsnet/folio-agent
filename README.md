@@ -101,7 +101,7 @@ widget はクリックされるまで通信しない。配色はサイトのラ�
 - 認証、会話の保存、ja / en 以外の言語
 - 知識に無いことへの回答（答えずに Contact へ案内する）
 
-公開 API が何を保証するかは [docs/guarantees.md](docs/guarantees.md) にある。
+公開 API が何を保証するかは [docs/guarantees/](docs/guarantees/README.md) にある。
 
 ## Development
 
